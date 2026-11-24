@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Kelola Dataset SINTESA - PARAS Kanwil DJPb Provinsi Aceh')
+@section('title', 'Kelola Dataset SINTESA - SIPANTAS Kanwil DJPb Provinsi Aceh')
 
 @section('content')
 <div class="space-y-6">

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Utama - PARAS Kanwil DJPb Provinsi Aceh')
+@section('title', 'Dashboard Utama - SIPANTAS Kanwil DJPb Provinsi Aceh')
 
 @section('content')
 <div class="space-y-6">
@@ -11,13 +11,13 @@
       <!-- Logo InTress Kanwil DJPb Provinsi Aceh -->
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white p-1 border border-slate-200/90 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
-          <img src="{{ asset('images/paras.png') }}" alt="Logo PARAS" class="w-full h-full object-contain">
+          <img src="{{ asset('images/paras.png') }}" alt="Logo SIPANTAS" class="w-full h-full object-contain">
         </div>
         <div>
           <div class="flex items-center gap-1.5 leading-none">
             <span class="text-xs sm:text-sm font-black text-[#1e40af] tracking-tight">Kanwil DJPb Provinsi Aceh</span>
           </div>
-          <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">Indonesian Treasury · Portal PARAS Regional</div>
+          <div class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-1">Indonesian Treasury · Portal SIPANTAS Regional</div>
         </div>
       </div>
     </div>

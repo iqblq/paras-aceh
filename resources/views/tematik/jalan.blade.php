@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Preservasi Jalan - PARAS Kanwil DJPb Provinsi Aceh')
+@section('title', 'Preservasi Jalan - SIPANTAS Kanwil DJPb Provinsi Aceh')
 
 @section('content')
 <div class="space-y-5 sm:space-y-6">
@@ -9,7 +9,7 @@
   <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white p-1 border border-slate-200/90 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
-        <img src="{{ asset('images/paras.png') }}" alt="Logo PARAS" class="w-full h-full object-contain">
+        <img src="{{ asset('images/paras.png') }}" alt="Logo SIPANTAS" class="w-full h-full object-contain">
       </div>
       <div>
         <div class="flex items-center gap-1.5 leading-none">

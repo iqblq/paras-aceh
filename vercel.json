@@ -34,11 +34,11 @@
     }
   ],
   "env": {
-    "APP_NAME": "PARAS Aceh",
+    "APP_NAME": "SIPANTAS",
     "APP_ENV": "production",
     "APP_KEY": "base64:Cmh0DDjAp9iRjVGLKVEwmh82wIOtYSc8KN9R7nKeScE=",
     "APP_DEBUG": "false",
-    "APP_URL": "https://paras-aceh.vercel.app",
+    "APP_URL": "https://sipantas.vercel.app",
     "DB_CONNECTION": "sqlite",
     "SINTESA_REAL_DATA": "true",
     "LOG_CHANNEL": "stderr",

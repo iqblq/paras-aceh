@@ -1,4 +1,4 @@
-<!-- SIDEBAR NAVIGASI PARAS 001 - LARAVEL MVC EDITION -->
+<!-- SIDEBAR NAVIGASI SIPANTAS - LARAVEL MVC EDITION -->
 <aside id="sidebarMenu" class="fixed inset-y-0 left-0 z-50 w-72 bg-[#0b1120] text-slate-300 flex flex-col justify-between transition-transform duration-300 -translate-x-full lg:translate-x-0 lg:static border-r border-slate-800/80 shadow-2xl lg:shadow-none select-none">
   
   <div class="flex flex-col h-full overflow-hidden">
@@ -6,14 +6,13 @@
     <!-- 1. BRAND HEADER & EMBLEM -->
     <div class="px-4 py-3.5 border-b border-slate-800/70 bg-[#080d19] flex items-center justify-between">
       <a href="{{ route('dashboard') }}" class="flex items-center gap-3 group">
-        <!-- Logo Emblem PARAS -->
+        <!-- Logo Emblem SIPANTAS -->
         <div class="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md shadow-blue-500/10 ring-1 ring-slate-700/60 shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
-          <img src="{{ asset('images/paras.png') }}" alt="Logo PARAS" class="w-full h-full object-contain">
+          <img src="{{ asset('images/paras.png') }}" alt="Logo SIPANTAS" class="w-full h-full object-contain">
         </div>
         <div>
           <div class="flex items-center gap-1.5">
-            <span class="text-sm font-black text-white tracking-tight group-hover:text-amber-400 transition-colors">PARAS</span>
-            <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/20 tracking-wider">ACEH</span>
+            <span class="text-base font-black text-white tracking-tight group-hover:text-amber-400 transition-colors">SIPANTAS</span>
           </div>
           <div class="text-[10px] text-slate-400 font-medium tracking-wide">Kanwil DJPb Provinsi Aceh</div>
         </div>

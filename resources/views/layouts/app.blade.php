@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>@yield('title', 'PARAS - Portal Pemantauan Anggaran Kanwil DJPb Provinsi Aceh')</title>
+  <title>@yield('title', 'SIPANTAS - Portal Pemantauan Anggaran Kanwil DJPb Provinsi Aceh')</title>
   
-  <!-- Favicon PARAS -->
+  <!-- Favicon SIPANTAS -->
   <link rel="icon" type="image/png" href="{{ asset('images/paras.png') }}">
   <link rel="apple-touch-icon" href="{{ asset('images/paras.png') }}">
   
@@ -115,7 +115,7 @@
   <!-- Mobile Backdrop Overlay for Sidebar Drawer -->
   <div id="sidebarBackdrop" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs hidden transition-opacity lg:hidden" onclick="closeSidebarDrawer()"></div>
 
-  <!-- 1. SIDEBAR NAVIGASI PARAS -->
+  <!-- 1. SIDEBAR NAVIGASI SIPANTAS -->
   @include('layouts.sidebar')
 
   <!-- 2. MAIN CONTAINER AREA -->
@@ -136,7 +136,7 @@
 
           <div class="flex items-center gap-2">
             <a href="{{ route('dashboard') }}" class="w-8 h-8 rounded-lg bg-white p-0.5 border border-slate-200/90 flex items-center justify-center shadow-xs shrink-0 overflow-hidden hover:ring-2 hover:ring-blue-500/20 transition-all">
-              <img src="{{ asset('images/paras.png') }}" alt="Logo PARAS" class="w-full h-full object-contain">
+              <img src="{{ asset('images/paras.png') }}" alt="Logo SIPANTAS" class="w-full h-full object-contain">
             </a>
             <div class="hidden sm:block">
               <div class="flex items-center gap-1.5 leading-none">
@@ -147,11 +147,11 @@
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span class="text-[10px] font-semibold text-emerald-700 tracking-wide">Live High-Fidelity Data · Portal PARAS</span>
+                <span class="text-[10px] font-semibold text-emerald-700 tracking-wide">Live High-Fidelity Data · Portal SIPANTAS</span>
               </div>
             </div>
             <div class="sm:hidden flex flex-col leading-none">
-              <span class="text-xs font-black text-slate-900">PARAS ACEH</span>
+              <span class="text-xs font-black text-slate-900">SIPANTAS</span>
               <span class="text-[9px] font-bold text-blue-600 mt-0.5">Kanwil DJPb</span>
             </div>
           </div>
@@ -234,7 +234,7 @@
     <!-- Institutional Footer Bar -->
     <footer class="mt-auto px-6 py-3 border-t border-slate-200/80 bg-white flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
       <div class="flex items-center gap-2">
-        <span class="font-bold text-slate-700">PARAS PRO</span>
+        <span class="font-bold text-slate-700">SIPANTAS</span>
         <span>·</span>
         <span>Kantor Wilayah Direktorat Jenderal Perbendaharaan (Kanwil DJPb) Provinsi Aceh</span>
       </div>
