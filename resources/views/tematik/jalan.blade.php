@@ -142,7 +142,14 @@
             <span class="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">{{ $summary['total_pagu_short'] }}</span>
             <span class="text-xs font-bold text-slate-500">Rupiah</span>
           </div>
-          <span class="text-[10px] text-slate-400 mt-1 block">Porsi 14,39% dari Total APBN Aceh</span>
+          @php
+            $jalanKlTotal = app(\App\Services\SupabaseService::class)->getExecutiveKpi()['total_pagu'] ?? 0;
+            $jalanPorsiKl = $jalanKlTotal > 0 ? round(($summary['total_pagu'] / $jalanKlTotal) * 100, 2) : 0;
+            $jalanTopPct = collect($outputs)->sortByDesc('persen')->first();
+            $jalanTopPagu = collect($outputs)->sortByDesc('pagu')->first();
+            $jalanLowPct = collect($outputs)->sortBy('persen')->first();
+          @endphp
+          <span class="text-[10px] text-slate-400 mt-1 block">Porsi {{ number_format($jalanPorsiKl, 2, ',', '.') }}% dari Belanja K/L Aceh</span>
         </div>
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +160,7 @@
     </div>
   </div>
 
-  <!-- 4. INTERACTIVE CHART & 9 OUTPUT CARDS: PAGU & REALISASI PER OUTPUT PRESERVASI JALAN -->
+  <!-- 4. INTERACTIVE CHART & OUTPUT CARDS: PAGU & REALISASI PER OUTPUT PRESERVASI JALAN -->
   <div class="bg-white rounded-2xl border border-slate-200/90 border-t-[4px] border-t-teal-600 p-4 sm:p-5 shadow-sm space-y-4">
 
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -163,7 +170,7 @@
           <span>Pagu & Realisasi per Output Preservasi Jalan</span>
         </h2>
         <p class="text-[11px] text-slate-400 mt-0.5">
-          💡 Klik batang grafik atau kartu output untuk menyaring tabel 26 rincian preservasi jalan & jembatan di bawah
+          💡 Klik batang grafik atau kartu output untuk menyaring tabel {{ count($items) }} rincian preservasi jalan & jembatan di bawah
         </p>
       </div>
 
@@ -188,7 +195,7 @@
           </button>
           <button type="button" id="btnJalanCards" onclick="switchJalanView('cards')"
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all">
-            <span>⊞ Kartu (9)</span>
+            <span>⊞ Kartu ({{ count($outputs) }})</span>
           </button>
         </div>
       </div>
@@ -197,15 +204,21 @@
     <!-- Executive Insight Strip -->
     <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
       <div class="flex flex-wrap items-center gap-2">
+        @if($jalanTopPct)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-          🏆 Serapan 100%: [CBF] Jembatan & Dinas PUPR Aceh
+          🏆 Serapan Tertinggi: [{{ $jalanTopPct['kode'] }}] {{ $jalanTopPct['label'] }} ({{ number_format($jalanTopPct['persen'], 2, ',', '.') }}%)
         </span>
+        @endif
+        @if($jalanTopPagu)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-          📌 Pagu Terbesar: [CDC] OM Jalan (Rp 3,05 T)
+          📌 Pagu Terbesar: [{{ $jalanTopPagu['kode'] }}] {{ $jalanTopPagu['label'] }} (Rp {{ $jalanTopPagu['pagu'] >= 1e12 ? number_format($jalanTopPagu['pagu'] / 1e12, 2, ',', '.') . ' T' : number_format($jalanTopPagu['pagu'] / 1e9, 1, ',', '.') . ' M' }})
         </span>
+        @endif
+        @if($jalanLowPct)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-          ⚡ Perlu Akselerasi: [CDF] OM Jembatan (47,00%)
+          ⚡ Perlu Akselerasi: [{{ $jalanLowPct['kode'] }}] {{ $jalanLowPct['label'] }} ({{ number_format($jalanLowPct['persen'], 2, ',', '.') }}%)
         </span>
+        @endif
       </div>
       <div id="jalanChartLegend" class="flex items-center gap-3 font-semibold text-slate-500">
         <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-sky-300"></span> Pagu DIPA</span>
@@ -267,7 +280,7 @@
 
   </div>
 
-  <!-- 5. SECTION TABEL 26 RINCIAN OUTPUT PRESERVASI JALAN -->
+  <!-- 5. SECTION TABEL RINCIAN OUTPUT PRESERVASI JALAN -->
   <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
 
     <!-- Toolbar Search + Filter Pills + Export CSV -->
@@ -283,7 +296,7 @@
 
         <div class="flex items-center gap-1.5 text-xs overflow-x-auto pb-1 lg:pb-0 no-scrollbar sm:flex-wrap">
           <button onclick="resetJalanFilters()" id="btnJalanAll" class="shrink-0 jalan-filter-btn px-3 py-1.5 bg-teal-600 text-white rounded-lg font-bold shadow-xs transition-all border border-teal-600">
-            Semua (26)
+            Semua ({{ count($items) }})
           </button>
           <button onclick="filterJalanStatus('tinggi', this)" class="shrink-0 jalan-filter-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg font-semibold transition-all border border-slate-200">
             Serapan &ge; 80%
@@ -420,7 +433,7 @@
 
     <!-- Footer Counter -->
     <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span id="jalanCountInfo">Menampilkan <strong class="text-slate-800">26</strong> dari 26 rincian output Preservasi Jalan</span>
+      <span id="jalanCountInfo">Menampilkan <strong class="text-slate-800">{{ count($items) }}</strong> dari {{ count($items) }} rincian output Preservasi Jalan</span>
       <span class="font-mono text-[10px] text-slate-400">Klik baris untuk detail paket · Kanwil DJPb Provinsi Aceh</span>
     </div>
 
@@ -626,7 +639,7 @@
                 if (ctx.datasetIndex === 0) return ` Pagu DIPA : ${formatJalanRp(o.pagu)}`;
                 return ` Realisasi : ${formatJalanRp(o.realisasi)} (${o.persen.toFixed(2).replace('.', ',')}%)`;
               },
-              afterBody: () => '\n Klik batang untuk filter tabel 26 output'
+              afterBody: () => '\n Klik batang untuk filter tabel {{ count($items) }} output'
             }
           }
         },
@@ -725,7 +738,7 @@
     });
 
     const info = document.getElementById('jalanCountInfo');
-    if (info) info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari 26 rincian output Preservasi Jalan`;
+    if (info) info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari {{ count($items) }} rincian output Preservasi Jalan`;
   }
 
   function filterJalanByOutput(kode) {

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Realisasi Anggaran 311 Satker - SIPANTAS Kanwil DJPb Provinsi Aceh')
+@section('title', 'Realisasi Anggaran Satker - SIPANTAS Kanwil DJPb Provinsi Aceh')
 
 @section('content')
 <div class="space-y-6">
@@ -41,7 +41,7 @@
         {{ $kpi['total_pagu_formatted'] }}
       </div>
       <div class="text-[11px] text-slate-400 font-medium flex items-center justify-between pt-2 border-t border-slate-100">
-        <span>Alokasi Gabungan K/L & BA BUN</span>
+        <span>Alokasi {{ $kpi['total_satker_count'] ?? 768 }} Satker K/L</span>
         <span class="font-bold text-blue-600 font-mono">100%</span>
       </div>
     </div>
@@ -181,15 +181,24 @@
 
     <!-- MODE 2: Grafik Komparasi Interaktif Pagu vs Realisasi 10 Jenis Belanja -->
     <div id="jenisBelanjaChartView" class="hidden bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-sm space-y-4">
+      @php
+        $realizedJenis = collect($jenisBelanja)->where('realisasi', '>', 0);
+        $topJenis = $realizedJenis->where('persen', '<=', 100)->sortByDesc('persen')->first() ?? $realizedJenis->sortByDesc('persen')->first();
+        $lowJenis = $realizedJenis->sortBy('persen')->first();
+      @endphp
       <!-- Insight Strip Atas Grafik -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
         <div class="flex flex-wrap items-center gap-2 text-[11px]">
+          @if($topJenis)
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-            🏆 Tertinggi: 66 - Dana Desa (99,15%)
+            🏆 Tertinggi: {{ $topJenis['nama'] }} ({{ number_format($topJenis['persen'], 2, ',', '.') }}%)
           </span>
+          @endif
+          @if($lowJenis)
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-            ⚡ Perlu Akselerasi: 53 - Belanja Modal (47,14%)
+            ⚡ Perlu Akselerasi: {{ $lowJenis['nama'] }} ({{ number_format($lowJenis['persen'], 2, ',', '.') }}%)
           </span>
+          @endif
         </div>
         <div class="flex items-center gap-3 text-[11px] font-semibold text-slate-500">
           <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-slate-200 border border-slate-300"></span> Pagu (Triliun)</span>
@@ -221,15 +230,20 @@
       </div>
 
       <!-- Quick Filter Pills & Reset -->
+      @php
+        $totalSatkerCount = count($satkerList);
+        $klSatkerCount = collect($satkerList)->where('kode_kl', '!=', '999')->count();
+        $bunSatkerCount = collect($satkerList)->where('kode_kl', '999')->count();
+      @endphp
       <div class="flex items-center gap-1.5 text-xs w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 no-scrollbar sm:flex-wrap">
         <button onclick="resetAllFilters()" id="btnFilterAll" class="shrink-0 filter-pill-btn px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-xs transition-all border border-blue-600">
-          Semua (311 Satker)
+          Semua ({{ $totalSatkerCount }} Satker)
         </button>
         <button onclick="filterByCriteria('kl')" class="shrink-0 filter-pill-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-100 rounded-lg font-semibold transition-all border border-slate-200">
-          Satker K/L (308)
+          Satker K/L ({{ $klSatkerCount }})
         </button>
         <button onclick="filterByCriteria('bun')" class="shrink-0 filter-pill-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-100 rounded-lg font-semibold transition-all border border-slate-200">
-          Satker BUN (3)
+          Satker BUN ({{ $bunSatkerCount }})
         </button>
         <button onclick="filterByCriteria('blokir')" class="shrink-0 filter-pill-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-600 rounded-lg font-semibold transition-all border border-slate-200">
           Ada Pagu Blokir
@@ -284,7 +298,7 @@
               $realisasi = $s['total_realisasi'] ?? 0;
               $persen = $pagu > 0 ? round(($realisasi / $pagu) * 100, 2) : 0;
               $blokir = $s['pagu_blokir'] ?? 0;
-              $isBun = in_array($s['kode_satker'] ?? '', ['500133', '700254', '600061']);
+              $isBun = ($s['kode_kl'] ?? '') === '999' || in_array($s['kode_satker'] ?? '', ['500133', '700254', '600061']);
             @endphp
             <tr onclick="openSatkerDetail(this)" 
                 class="hover:bg-blue-50/50 transition-colors satker-row cursor-pointer group" 

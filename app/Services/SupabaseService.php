@@ -226,6 +226,11 @@ class SupabaseService
 
     public function getBunRegionalData(): array
     {
+        $realBun = app(\App\Services\SintesaImportService::class)->getSummary('bun_regional_data');
+        if (!empty($realBun) && config('app.sintesa_real_data', true)) {
+            return $realBun;
+        }
+
         return [
             'ALL' => [
                 'labels' => [
@@ -799,18 +804,21 @@ class SupabaseService
 
     public function getJenisBelanjaCards(): array
     {
+        $realJenisAll = app(\App\Services\SintesaImportService::class)->getSummary('jenis_belanja_all');
         $realJenis = app(\App\Services\SintesaImportService::class)->getSummary('jenis_belanja');
         $realMap = [];
-        if (!empty($realJenis)) {
+        if (!empty($realJenisAll)) {
+            $realMap = $realJenisAll;
+        } elseif (!empty($realJenis)) {
             foreach ($realJenis as $rj) {
                 $realMap[$rj['kode']] = $rj;
             }
         }
 
         $tkdSummary = app(\App\Services\SintesaImportService::class)->getSummary('tkd_summary');
-        $ddPagu = $tkdSummary['dana_desa_total_pagu'] ?? 1738584898000;
-        $ddReal = $tkdSummary['dana_desa_total_realisasi'] ?? 652773329000;
-        $ddPct = $ddPagu > 0 ? round(($ddReal / $ddPagu) * 100, 2) : 37.55;
+        $ddPagu = $realMap['66']['pagu'] ?? ($tkdSummary['dana_desa_total_pagu'] ?? 1738584898000);
+        $ddReal = $realMap['66']['realisasi'] ?? ($tkdSummary['dana_desa_total_realisasi'] ?? 652773329000);
+        $ddPct = $ddPagu > 0 ? round(($ddReal / $ddPagu) * 100, 2) : 0;
 
         return [
             // Row 1: Belanja K/L (Pusat)
@@ -874,11 +882,11 @@ class SupabaseService
                 'kode' => '61',
                 'nama' => '61 - DANA BAGI HASIL',
                 'kategori' => 'Transfer Ke Daerah',
-                'pagu' => 409250181000,
-                'pagu_formatted' => 'Rp 409.250.181.000',
-                'realisasi' => 402705996900,
-                'realisasi_formatted' => 'Rp 402.705.996.900',
-                'persen' => 98.40,
+                'pagu' => $realMap['61']['pagu'] ?? 979414907000,
+                'pagu_formatted' => $realMap['61']['pagu_formatted'] ?? 'Rp 979.414.907.000',
+                'realisasi' => $realMap['61']['realisasi'] ?? 0,
+                'realisasi_formatted' => $realMap['61']['realisasi_formatted'] ?? 'Rp 0',
+                'persen' => $realMap['61']['persentase'] ?? 0,
                 'color' => 'emerald',
                 'border_accent' => 'border-t-emerald-500',
                 'text_color' => 'text-emerald-600',
@@ -889,11 +897,11 @@ class SupabaseService
                 'kode' => '62',
                 'nama' => '62 - DAU',
                 'kategori' => 'Transfer Ke Daerah',
-                'pagu' => 6164737922000,
-                'pagu_formatted' => 'Rp 6.164.737.922.000',
-                'realisasi' => 5740062250900,
-                'realisasi_formatted' => 'Rp 5.740.062.250.900',
-                'persen' => 93.11,
+                'pagu' => $realMap['62']['pagu'] ?? 18134356324000,
+                'pagu_formatted' => $realMap['62']['pagu_formatted'] ?? 'Rp 18.134.356.324.000',
+                'realisasi' => $realMap['62']['realisasi'] ?? 0,
+                'realisasi_formatted' => $realMap['62']['realisasi_formatted'] ?? 'Rp 0',
+                'persen' => $realMap['62']['persentase'] ?? 0,
                 'color' => 'indigo',
                 'border_accent' => 'border-t-indigo-600',
                 'text_color' => 'text-indigo-600',
@@ -903,11 +911,11 @@ class SupabaseService
                 'kode' => '63',
                 'nama' => '63 - DAK FISIK',
                 'kategori' => 'Transfer Ke Daerah',
-                'pagu' => 109568784000,
-                'pagu_formatted' => 'Rp 109.568.784.000',
-                'realisasi' => 56803927596,
-                'realisasi_formatted' => 'Rp 56.803.927.596',
-                'persen' => 51.84,
+                'pagu' => $realMap['63']['pagu'] ?? 388263417000,
+                'pagu_formatted' => $realMap['63']['pagu_formatted'] ?? 'Rp 388.263.417.000',
+                'realisasi' => $realMap['63']['realisasi'] ?? 0,
+                'realisasi_formatted' => $realMap['63']['realisasi_formatted'] ?? 'Rp 0',
+                'persen' => $realMap['63']['persentase'] ?? 0,
                 'color' => 'rose',
                 'border_accent' => 'border-t-rose-500',
                 'text_color' => 'text-rose-600',
@@ -917,11 +925,11 @@ class SupabaseService
                 'kode' => '64',
                 'nama' => '64 - OTSUS & DID',
                 'kategori' => 'Transfer Ke Daerah',
-                'pagu' => 4076166626000,
-                'pagu_formatted' => 'Rp 4076.166.626.000',
-                'realisasi' => 4030869296000,
-                'realisasi_formatted' => 'Rp 4.030.869.296.000',
-                'persen' => 98.89,
+                'pagu' => $realMap['64']['pagu'] ?? 4076166626000,
+                'pagu_formatted' => $realMap['64']['pagu_formatted'] ?? 'Rp 4.076.166.626.000',
+                'realisasi' => $realMap['64']['realisasi'] ?? 0,
+                'realisasi_formatted' => $realMap['64']['realisasi_formatted'] ?? 'Rp 0',
+                'persen' => $realMap['64']['persentase'] ?? 0,
                 'color' => 'amber',
                 'border_accent' => 'border-t-amber-600',
                 'text_color' => 'text-amber-700',
@@ -931,11 +939,11 @@ class SupabaseService
                 'kode' => '65',
                 'nama' => '65 - DAK NON FISIK',
                 'kategori' => 'Transfer Ke Daerah',
-                'pagu' => 1743880873000,
-                'pagu_formatted' => 'Rp 1.743.880.873.000',
-                'realisasi' => 1581917544741,
-                'realisasi_formatted' => 'Rp 1.581.917.544.741',
-                'persen' => 90.71,
+                'pagu' => $realMap['65']['pagu'] ?? 4424703832000,
+                'pagu_formatted' => $realMap['65']['pagu_formatted'] ?? 'Rp 4.424.703.832.000',
+                'realisasi' => $realMap['65']['realisasi'] ?? 0,
+                'realisasi_formatted' => $realMap['65']['realisasi_formatted'] ?? 'Rp 0',
+                'persen' => $realMap['65']['persentase'] ?? 0,
                 'color' => 'sky',
                 'border_accent' => 'border-t-sky-500',
                 'text_color' => 'text-sky-600',
@@ -1059,6 +1067,11 @@ class SupabaseService
 
     public function getPrioritasPresidenJenis(): array
     {
+        $realJenis = app(\App\Services\SintesaImportService::class)->getSummary('tematik_prioritas_jenis');
+        if (!empty($realJenis) && config('app.sintesa_real_data', true)) {
+            return $realJenis;
+        }
+
         return [
             [
                 'kode' => '13',
@@ -1204,6 +1217,10 @@ class SupabaseService
 
     public function getProgramStrategisSummary(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('program_strategis_summary');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             'total_pagu' => 4258377584000,
             'total_pagu_formatted' => 'Rp 4.258.377.584.000',
@@ -1223,6 +1240,10 @@ class SupabaseService
 
     public function getProgramStrategisJenis(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('program_strategis_jenis');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             [
                 'kode' => '11',
@@ -1289,6 +1310,10 @@ class SupabaseService
 
     public function getProgramStrategisData(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('program_strategis_items');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             ['no' => 1, 'kode_satker' => '069264', 'nama_satker' => 'DINAS PERTANIAN DAN PERKEBUNAN ACEH', 'kl' => 'KEMENTERIAN PERTANIAN', 'wilayah' => 'ACEH', 'kode_jenis' => '23', 'jenis' => 'Ketahanan Pangan', 'kegiatan' => '[4579] Pengelolaan Sistem Perbenihan Tanaman Pangan', 'program' => '[HA] Program Ketersediaan, Akses dan Konsumsi Pangan Berkualitas', 'pagu' => 116670000, 'realisasi' => 96435310, 'pct' => 82.66, 'blokir' => 0],
             ['no' => 2, 'kode_satker' => '069392', 'nama_satker' => 'DINAS PERTANIAN DAN PERKEBUNAN ACEH', 'kl' => 'KEMENTERIAN PERTANIAN', 'wilayah' => 'ACEH', 'kode_jenis' => '23', 'jenis' => 'Ketahanan Pangan', 'kegiatan' => '[1761] Pengelolaan Produksi Aneka Kacang dan Umbi Tanaman Pangan', 'program' => '[HA] Program Ketersediaan, Akses dan Konsumsi Pangan Berkualitas', 'pagu' => 633000, 'realisasi' => 0, 'pct' => 0.00, 'blokir' => 0],
@@ -1464,6 +1489,10 @@ class SupabaseService
 
     public function getJalanSummary(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('jalan_summary');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             'total_pagu' => 5790873002000,
             'total_pagu_formatted' => 'Rp 5.790.873.002.000',
@@ -1483,6 +1512,10 @@ class SupabaseService
 
     public function getJalanOutputs(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('jalan_outputs');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             ['kode' => 'CDC', 'nama' => '[CDC] OM Prasarana Bidang Konektivitas Darat (Jalan)', 'label' => 'OM Konektivitas Darat (Jalan)', 'pagu' => 3052400000000, 'realisasi' => 1921623200000, 'persen' => 62.95, 'row_count' => 5],
             ['kode' => 'CDF', 'nama' => '[CDF] OM Prasarana Bidang Konektivitas Darat (Jembatan)', 'label' => 'OM Konektivitas Darat (Jembatan)', 'pagu' => 1948500000000, 'realisasi' => 915795000000, 'persen' => 47.00, 'row_count' => 5],
@@ -1498,6 +1531,10 @@ class SupabaseService
 
     public function getJalanData(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('jalan_items');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             ['no' => 1, 'kode_satker' => '693818', 'nama_satker' => 'PELAKSANAAN JALAN NASIONAL WILAYAH III PROVINSI ACEH', 'kl' => 'KEMENTERIAN PEKERJAAN UMUM', 'wilayah' => 'ACEH', 'kode_out' => 'CBC', 'kegiatan' => '[7696] Pembangunan dan Preservasi Jalan Nasional', 'output' => '[CBC] Prasarana Bidang Konektivitas Darat (Jalan)', 'program' => '[GA] Program Infrastruktur Konektivitas', 'pagu' => 4265602000, 'realisasi' => 2566198000, 'pct' => 60.16],
             ['no' => 2, 'kode_satker' => '693818', 'nama_satker' => 'PELAKSANAAN JALAN NASIONAL WILAYAH III PROVINSI ACEH', 'kl' => 'KEMENTERIAN PEKERJAAN UMUM', 'wilayah' => 'ACEH', 'kode_out' => 'CBF', 'kegiatan' => '[7696] Pembangunan dan Preservasi Jalan Nasional', 'output' => '[CBF] Prasarana Bidang Konektivitas Darat (Jembatan)', 'program' => '[GA] Program Infrastruktur Konektivitas', 'pagu' => 260000000, 'realisasi' => 260000000, 'pct' => 100.00],
@@ -1530,6 +1567,10 @@ class SupabaseService
 
     public function getBansosSummary(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bansos_summary');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             'total_pagu' => 6243900000,
             'total_realisasi' => 5767624824,
@@ -1555,6 +1596,10 @@ class SupabaseService
 
     public function getBansosOutputs(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bansos_outputs');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             [
                 'kode_out' => 'QAA',
@@ -1585,6 +1630,10 @@ class SupabaseService
 
     public function getBansosData(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bansos_items');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             [
                 'no' => 1,
@@ -1723,6 +1772,11 @@ class SupabaseService
 
     public function getTKDSummary(): array
     {
+        $realTkd = app(\App\Services\SintesaImportService::class)->getSummary('tkd_bun_detail');
+        if (!empty($realTkd['summary']) && config('app.sintesa_real_data', true)) {
+            return $realTkd['summary'];
+        }
+
         return [
             'total_pagu' => 12931920218000,
             'total_realisasi' => 12237037761537,
@@ -1744,6 +1798,11 @@ class SupabaseService
 
     public function getTKDSatkerBUN(): array
     {
+        $realTkd = app(\App\Services\SintesaImportService::class)->getSummary('tkd_bun_detail');
+        if (!empty($realTkd['satker_bun']) && config('app.sintesa_real_data', true)) {
+            return $realTkd['satker_bun'];
+        }
+
         return [
             [
                 'no' => 1,
@@ -1789,6 +1848,11 @@ class SupabaseService
 
     public function getTKDOtsusItems(): array
     {
+        $realTkd = app(\App\Services\SintesaImportService::class)->getSummary('tkd_bun_detail');
+        if (!empty($realTkd['otsus_items']) && config('app.sintesa_real_data', true)) {
+            return $realTkd['otsus_items'];
+        }
+
         return [
             [
                 'no' => 1,
@@ -1834,6 +1898,11 @@ class SupabaseService
 
     public function getTKDDbhItems(): array
     {
+        $realTkd = app(\App\Services\SintesaImportService::class)->getSummary('tkd_bun_detail');
+        if (!empty($realTkd['dbh_items']) && config('app.sintesa_real_data', true)) {
+            return $realTkd['dbh_items'];
+        }
+
         return [
             ['no' => 1, 'uraian' => 'Belanja Dana Bagi Hasil Cukai Hasil Tembakau', 'kategori' => 'Cukai', 'pagu' => 6058901000, 'realisasi' => 5798978150, 'sisa' => 259922850, 'pct' => 95.71, 'status' => 'Optimal'],
             ['no' => 2, 'uraian' => 'Belanja Dana Bagi Hasil Gas Bumi', 'kategori' => 'SDA Migas', 'pagu' => 5478149000, 'realisasi' => 5478149000, 'sisa' => 0, 'pct' => 100.00, 'status' => 'Optimal'],

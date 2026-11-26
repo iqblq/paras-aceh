@@ -142,7 +142,14 @@
             <span class="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">{{ $summary['total_pagu_short'] }}</span>
             <span class="text-xs font-bold text-slate-500">Rupiah</span>
           </div>
-          <span class="text-[10px] text-slate-400 mt-1 block">Porsi 10,58% dari Total APBN Aceh</span>
+          @php
+            $stratKlTotal = app(\App\Services\SupabaseService::class)->getExecutiveKpi()['total_pagu'] ?? 0;
+            $stratPorsiKl = $stratKlTotal > 0 ? round(($summary['total_pagu'] / $stratKlTotal) * 100, 2) : 0;
+            $stratTopPct = collect($jenisList)->sortByDesc('persen')->first();
+            $stratTopPagu = collect($jenisList)->sortByDesc('pagu')->first();
+            $stratLowPct = collect($jenisList)->sortBy('persen')->first();
+          @endphp
+          <span class="text-[10px] text-slate-400 mt-1 block">Porsi {{ number_format($stratPorsiKl, 2, ',', '.') }}% dari Belanja K/L Aceh</span>
         </div>
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +160,7 @@
     </div>
   </div>
 
-  <!-- 4. INTERACTIVE CHART & 6 JENIS CARDS: PAGU & REALISASI PER JENIS PROGRAM STRATEGIS -->
+  <!-- 4. INTERACTIVE CHART & JENIS CARDS: PAGU & REALISASI PER JENIS PROGRAM STRATEGIS -->
   <div class="bg-white rounded-2xl border border-slate-200/90 border-t-[4px] border-t-violet-600 p-4 sm:p-5 shadow-sm space-y-4">
 
     <!-- Header & Dual Controls -->
@@ -164,7 +171,7 @@
           <span>Pagu & Realisasi per Jenis Program Strategis</span>
         </h2>
         <p class="text-[11px] text-slate-400 mt-0.5">
-          💡 Klik batang grafik atau kartu jenis strategis untuk menyaring tabel 52 rincian output di bawah
+          💡 Klik batang grafik atau kartu jenis strategis untuk menyaring tabel {{ count($items) }} rincian output di bawah
         </p>
       </div>
 
@@ -181,7 +188,7 @@
           </button>
         </div>
 
-        <!-- Toggle Mode Tampilan (Grafik vs Kartu 6 Jenis) -->
+        <!-- Toggle Mode Tampilan (Grafik vs Kartu Jenis) -->
         <div class="inline-flex items-center p-1 bg-slate-200/70 rounded-xl border border-slate-200">
           <button type="button" id="btnStratChart" onclick="switchStratView('chart')"
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold bg-white text-blue-700 shadow-2xs transition-all">
@@ -189,7 +196,7 @@
           </button>
           <button type="button" id="btnStratCards" onclick="switchStratView('cards')"
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all">
-            <span>⊞ Kartu (6)</span>
+            <span>⊞ Kartu ({{ count($jenisList) }})</span>
           </button>
         </div>
       </div>
@@ -198,15 +205,21 @@
     <!-- Executive Insight Strip -->
     <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
       <div class="flex flex-wrap items-center gap-2">
+        @if($stratTopPct)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-          🏆 Serapan Tertinggi: [27] Padat Karya (94,50%)
+          🏆 Serapan Tertinggi: [{{ $stratTopPct['kode'] }}] {{ $stratTopPct['label'] }} ({{ number_format($stratTopPct['persen'], 2, ',', '.') }}%)
         </span>
+        @endif
+        @if($stratTopPagu)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-          📌 Pagu Terbesar: [11] 3 Juta Rumah (Rp 1,82 T)
+          📌 Pagu Terbesar: [{{ $stratTopPagu['kode'] }}] {{ $stratTopPagu['label'] }} (Rp {{ $stratTopPagu['pagu'] >= 1e12 ? number_format($stratTopPagu['pagu'] / 1e12, 2, ',', '.') . ' T' : number_format($stratTopPagu['pagu'] / 1e9, 1, ',', '.') . ' M' }})
         </span>
+        @endif
+        @if($stratLowPct)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-          ⚡ Perlu Akselerasi: [11] 3 Juta Rumah (21,10%)
+          ⚡ Perlu Akselerasi: [{{ $stratLowPct['kode'] }}] {{ $stratLowPct['label'] }} ({{ number_format($stratLowPct['persen'], 2, ',', '.') }}%)
         </span>
+        @endif
       </div>
       <div id="stratChartLegend" class="flex items-center gap-3 font-semibold text-slate-500">
         <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-sky-300"></span> Pagu DIPA</span>
@@ -273,7 +286,7 @@
 
   </div>
 
-  <!-- 5. SECTION TABEL 52 RINCIAN OUTPUT PROGRAM STRATEGIS -->
+  <!-- 5. SECTION TABEL RINCIAN OUTPUT PROGRAM STRATEGIS -->
   <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
 
     <!-- Toolbar Search + Filter Pills + Export CSV -->
@@ -291,7 +304,7 @@
         <!-- Quick Status Pills & Export -->
         <div class="flex items-center gap-1.5 text-xs overflow-x-auto pb-1 lg:pb-0 no-scrollbar sm:flex-wrap">
           <button onclick="resetStratFilters()" id="btnStratAll" class="shrink-0 strat-filter-btn px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold shadow-xs transition-all border border-blue-600">
-            Semua (52)
+            Semua ({{ count($items) }})
           </button>
           <button onclick="filterStratStatus('tinggi', this)" class="shrink-0 strat-filter-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg font-semibold transition-all border border-slate-200">
             Serapan &ge; 80%
@@ -429,7 +442,7 @@
 
     <!-- Table Footer Counter -->
     <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span id="stratCountInfo">Menampilkan <strong class="text-slate-800">52</strong> dari 52 rincian output Program Strategis</span>
+      <span id="stratCountInfo">Menampilkan <strong class="text-slate-800">{{ count($items) }}</strong> dari {{ count($items) }} rincian output Program Strategis</span>
       <span class="font-mono text-[10px] text-slate-400">Klik baris untuk melihat detail kegiatan · Kanwil DJPb Provinsi Aceh</span>
     </div>
 
@@ -641,7 +654,7 @@
                 if (ctx.datasetIndex === 0) return ` Pagu DIPA : ${formatStratRp(j.pagu)}`;
                 return ` Realisasi : ${formatStratRp(j.realisasi)} (${j.persen.toFixed(2).replace('.', ',')}%)`;
               },
-              afterBody: () => '\n Klik batang untuk filter tabel 52 output'
+              afterBody: () => '\n Klik batang untuk filter tabel {{ count($items) }} output'
             }
           }
         },
@@ -742,7 +755,7 @@
 
     const info = document.getElementById('stratCountInfo');
     if (info) {
-      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari 52 rincian output Program Strategis`;
+      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari {{ count($items) }} rincian output Program Strategis`;
     }
   }
 

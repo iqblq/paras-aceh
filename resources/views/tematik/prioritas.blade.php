@@ -43,8 +43,8 @@
         </div>
       </div>
       <div class="text-[11px] text-slate-400 font-medium flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100">
-        <span>Alokasi Prioritas Presiden Aceh</span>
-        <span class="font-bold text-blue-600 font-mono">100%</span>
+        <span>{{ ($summary['has_pagu'] ?? true) ? 'Alokasi Prioritas Presiden Aceh' : 'CSV Tematik hanya memuat Realisasi' }}</span>
+        <span class="font-bold text-blue-600 font-mono">{{ ($summary['has_pagu'] ?? true) ? '100%' : 'CSV' }}</span>
       </div>
     </div>
 
@@ -60,7 +60,7 @@
         </div>
       </div>
       <div class="text-[11px] text-slate-400 font-medium flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100">
-        <span>Sisa: {{ $summary['sisa_pagu_short'] }} ({{ number_format($summary['persen_sisa'], 2, ',', '.') }}%)</span>
+        <span>{{ ($summary['has_pagu'] ?? true) ? 'Sisa: ' . $summary['sisa_pagu_short'] . ' (' . number_format($summary['persen_sisa'], 2, ',', '.') . '%)' : 'Total Realisasi ' . $summary['total_ro'] . ' Output' }}</span>
         <span class="font-bold text-emerald-600 font-mono">SP2D Online</span>
       </div>
     </div>
@@ -70,7 +70,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <div class="text-[11px] font-extrabold text-slate-500 tracking-wider uppercase mb-1">
-            PERSENTASE
+            {{ ($summary['has_pagu'] ?? true) ? 'PERSENTASE' : 'PORSI REALISASI K/L' }}
           </div>
           <div class="text-xl sm:text-3xl font-black text-amber-500 font-mono tracking-tight leading-none my-1">
             {{ number_format($summary['persen_realisasi'], 2, '.', ',') }}%
@@ -88,8 +88,8 @@
         </div>
       </div>
       <div class="text-[11px] text-slate-400 font-medium flex items-center justify-between pt-2 mt-2 border-t border-slate-100">
-        <span>Target Serapan Q4: 90%</span>
-        <span class="font-bold text-amber-600">Perlu Akselerasi</span>
+        <span>{{ ($summary['has_pagu'] ?? true) ? 'Target Serapan Q4: 90%' : 'Kontribusi thd Realisasi K/L' }}</span>
+        <span class="font-bold text-amber-600">{{ ($summary['has_pagu'] ?? true) ? 'Perlu Akselerasi' : $summary['total_jenis'] . ' Prioritas' }}</span>
       </div>
     </div>
 
@@ -137,12 +137,12 @@
 
       <div class="bg-white rounded-2xl border border-slate-200/90 border-t-[4px] border-t-emerald-500 p-4 shadow-xs hover:shadow-md transition-all flex items-center justify-between">
         <div>
-          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Total Pagu DIPA</span>
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Total Realisasi</span>
           <div class="flex items-baseline gap-1.5 mt-1">
-            <span class="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">{{ $summary['total_pagu_short'] }}</span>
+            <span class="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">{{ $summary['total_realisasi_short'] ?? '5,54 T' }}</span>
             <span class="text-xs font-bold text-slate-500">Rupiah</span>
           </div>
-          <span class="text-[10px] text-slate-400 mt-1 block">Porsi 17,03% dari Total APBN Aceh</span>
+          <span class="text-[10px] text-slate-400 mt-1 block">Porsi {{ number_format($summary['persen_realisasi'], 2, ',', '.') }}% thd Realisasi K/L Aceh</span>
         </div>
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@
           <span>Pagu & Realisasi per Jenis Prioritas Presiden</span>
         </h2>
         <p class="text-[11px] text-slate-400 mt-0.5">
-          💡 Klik batang grafik atau kartu jenis prioritas untuk menyaring tabel 38 rincian output di bawah
+          💡 Klik batang grafik atau kartu jenis prioritas untuk menyaring tabel {{ $summary['total_ro'] }} rincian output di bawah
         </p>
       </div>
 
@@ -181,7 +181,7 @@
           </button>
         </div>
 
-        <!-- Toggle Mode Tampilan (Grafik vs Kartu 9 Jenis) -->
+        <!-- Toggle Mode Tampilan (Grafik vs Kartu Jenis) -->
         <div class="inline-flex items-center p-1 bg-slate-200/70 rounded-xl border border-slate-200">
           <button type="button" id="btnPrioritasChart" onclick="switchPrioritasView('chart')"
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold bg-white text-blue-700 shadow-2xs transition-all">
@@ -189,24 +189,34 @@
           </button>
           <button type="button" id="btnPrioritasCards" onclick="switchPrioritasView('cards')"
                   class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all">
-            <span>⊞ Kartu (9)</span>
+            <span>⊞ Kartu ({{ count($jenisList) }})</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Executive Insight Strip -->
+    <!-- Executive Insight Strip (Dinamis dari Database SQLite) -->
+    @php
+      $topRealJenis = collect($jenisList)->sortByDesc('realisasi')->first();
+      $topPaketJenis = collect($jenisList)->sortByDesc('paket_count')->first();
+    @endphp
     <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-          🏆 Serapan Tertinggi: [20] Perumahan Swadaya (95,00%)
-        </span>
+        @if($topRealJenis)
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-          📌 Pagu Terbesar: [13] Preservasi Jalan (Rp 3,25 T)
+          📌 Realisasi Terbesar: [{{ $topRealJenis['kode'] }}] {{ $topRealJenis['label'] }} (Rp {{ number_format($topRealJenis['realisasi'] / 1e12, 2, ',', '.') }} T)
         </span>
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-          ⚡ Perlu Akselerasi: [10] Revitalisasi Sekolah (39,50%)
+        @endif
+        @if($topPaketJenis)
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+          📦 Output Terbanyak: [{{ $topPaketJenis['kode'] }}] {{ $topPaketJenis['label'] }} ({{ $topPaketJenis['paket_count'] ?? $topPaketJenis['satker_count'] }} Output)
         </span>
+        @endif
+        @if(!empty($summary['has_pagu']))
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+          ✨ Total Serapan: {{ number_format($summary['persen_realisasi'] ?? 0, 2, ',', '.') }}%
+        </span>
+        @endif
       </div>
       <div id="prioritasChartLegend" class="flex items-center gap-3 font-semibold text-slate-500">
         <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-sky-300"></span> Pagu DIPA</span>
@@ -413,7 +423,7 @@
 
     <!-- Table Footer Counter -->
     <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span id="prioritasCountInfo">Menampilkan <strong class="text-slate-800">38</strong> dari 38 rincian output Prioritas Presiden</span>
+      <span id="prioritasCountInfo">Menampilkan <strong class="text-slate-800">{{ count($items) }}</strong> dari {{ count($items) }} rincian output Prioritas Presiden</span>
       <span class="font-mono text-[10px] text-slate-400">Klik baris untuk melihat detail kegiatan · Kanwil DJPb Provinsi Aceh</span>
     </div>
 
@@ -628,7 +638,7 @@
                 if (ctx.datasetIndex === 0) return ` Pagu DIPA : ${formatRupiahFull(j.pagu)}`;
                 return ` Realisasi : ${formatRupiahFull(j.realisasi)} (${j.persen.toFixed(2).replace('.', ',')}%)`;
               },
-              afterBody: () => '\n Klik batang untuk filter tabel 38 output'
+              afterBody: () => '\n Klik batang untuk filter tabel {{ count($items) }} output'
             }
           }
         },
@@ -727,7 +737,7 @@
 
     const info = document.getElementById('prioritasCountInfo');
     if (info) {
-      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari 38 rincian output Prioritas Presiden`;
+      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari {{ count($items) }} rincian output Prioritas Presiden`;
     }
   }
 

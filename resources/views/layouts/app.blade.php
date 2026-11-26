@@ -6,8 +6,8 @@
   <title>@yield('title', 'SIPANTAS - Portal Pemantauan Anggaran Kanwil DJPb Provinsi Aceh')</title>
   
   <!-- Favicon SIPANTAS -->
-  <link rel="icon" type="image/png" href="{{ asset('images/paras.png') }}">
-  <link rel="apple-touch-icon" href="{{ asset('images/paras.png') }}">
+  <link rel="icon" type="image/png" href="{{ asset('images/paras.png') }}?v=2">
+  <link rel="apple-touch-icon" href="{{ asset('images/paras.png') }}?v=2">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>

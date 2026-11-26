@@ -186,13 +186,16 @@
       </div>
 
       <!-- Chart 2: Porsi Pagu Otonomi Khusus (Per Uraian) -->
+      @php
+        $otsusSumPagu = array_sum(array_column($otsusItems, 'pagu'));
+      @endphp
       <div class="bg-white rounded-2xl border border-slate-200/90 border-t-[4px] border-t-amber-500 p-4 sm:p-5 shadow-sm flex flex-col justify-between">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold text-slate-800">Porsi Pagu Otonomi Khusus (Per Uraian)</h3>
-            <p class="text-[11px] text-slate-400 mt-0.5">Total Alokasi Otsus & Tambahan DBH: Rp 4,14 Triliun</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Total Alokasi Otsus & Tambahan DBH: Rp {{ number_format($otsusSumPagu / 1e12, 2, ',', '.') }} Triliun</p>
           </div>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">3 Uraian</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">{{ count($otsusItems) }} Uraian</span>
         </div>
 
         <div class="relative w-full h-[260px] sm:h-[280px] my-3 flex items-center justify-center">
@@ -200,9 +203,9 @@
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2 text-[11px]">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Dana Otsus Aceh: 98,5%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Tambahan Gas Bumi: 0,8%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Tambahan Minyak Bumi: 0,7%</span>
+          @foreach ($otsusPorsi as $op)
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50 text-slate-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full" style="background-color: {{ $op['color'] }}"></span> {{ $op['label_singkat'] }}: {{ number_format($op['porsi'], 1, ',', '.') }}%</span>
+          @endforeach
         </div>
       </div>
 
@@ -258,10 +261,15 @@
       </div>
     </div>
 
+    @php
+      $dbhTotalPagu = collect($dbhItems)->sum('pagu');
+      $dbhTotalReal = collect($dbhItems)->sum('realisasi');
+      $dbhTotalPct = $dbhTotalPagu > 0 ? round(($dbhTotalReal / $dbhTotalPagu) * 100, 2) : 0;
+    @endphp
     <!-- Active Daerah Banner -->
     <div id="dbhDaerahBanner" class="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between text-xs text-blue-800 font-semibold">
       <span id="dbhDaerahBannerText">Menampilkan Data: <strong>TOTAL KESELURUHAN DBH ACEH</strong></span>
-      <span class="text-[11px] font-mono text-blue-600">Pagu: Rp 409,25 M · Realisasi: Rp 402,71 M (98,40%)</span>
+      <span class="text-[11px] font-mono text-blue-600">Pagu: Rp {{ number_format($dbhTotalPagu / 1e9, 2, ',', '.') }} M · Realisasi: Rp {{ number_format($dbhTotalReal / 1e9, 2, ',', '.') }} M ({{ number_format($dbhTotalPct, 2, ',', '.') }}%)</span>
     </div>
 
     <!-- DBH Table (Kolom Persis Gambar 2 & 3: URAIAN DANA BAGI HASIL, PAGU, REALISASI, %) -->
@@ -365,8 +373,8 @@
 
     <!-- Footer Counter -->
     <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span id="dbhCountInfo">Menampilkan <strong class="text-slate-800">16</strong> dari 16 jenis Dana Bagi Hasil</span>
-      <span class="font-mono text-[10px] text-slate-400">Penyaluran via KPPN Banda Aceh · Kanwil DJPb Provinsi Aceh</span>
+      <span id="dbhCountInfo">Menampilkan <strong class="text-slate-800">{{ count($dbhItems) }}</strong> dari {{ count($dbhItems) }} jenis Dana Bagi Hasil</span>
+      <span class="font-mono text-[10px] text-slate-400">Penyaluran 7 KPPN Se-Aceh · Kanwil DJPb Provinsi Aceh</span>
     </div>
 
   </div>
@@ -473,12 +481,12 @@
       <div>
         <h2 class="text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
           <span>🏛️</span>
-          <span>PAGU REALISASI PER SATKER BA BUN (KPPN BANDA ACEH)</span>
+          <span>PAGU REALISASI PER KELOMPOK SATKER BA BUN (7 KPPN SE-ACEH)</span>
         </h2>
         <p class="text-[11px] text-slate-400 mt-0.5">Satker Penyalur Transfer Umum, Transfer Khusus, dan Dana Desa / Otsus</p>
       </div>
       <span class="self-start sm:self-auto px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
-        3 Satker Penyalur
+        {{ count($satkerBUN) }} Kelompok · {{ $summary['total_satker'] }} Satker
       </span>
     </div>
 
@@ -528,21 +536,21 @@
         <tfoot class="bg-slate-100/90 border-t-2 border-slate-300 font-mono font-black text-xs text-slate-900">
           <tr>
             <td colspan="3" class="py-3.5 px-3 text-center uppercase tracking-wider font-extrabold text-slate-800">
-              TOTAL ALOKASI TKD KPPN BANDA ACEH
+              TOTAL ALOKASI TKD BA BUN ACEH ({{ $summary['total_satker'] }} SATKER)
             </td>
             <td class="py-3.5 px-3 text-right font-bold whitespace-nowrap">
-              Rp 12.931.920.218.000
+              {{ $summary['total_pagu_formatted'] }}
             </td>
             <td class="py-3.5 px-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">
-              Rp 12.237.037.761.537
+              {{ $summary['total_realisasi_formatted'] }}
             </td>
             <td class="py-3.5 px-3">
               <div class="flex items-center justify-between text-emerald-700 font-extrabold mb-1">
-                <span>94,63%</span>
-                <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase font-sans">Optimal</span>
+                <span>{{ number_format($summary['persen_realisasi'], 2, ',', '.') }}%</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase font-sans">SINTESA Real</span>
               </div>
               <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div class="bg-emerald-600 h-2 rounded-full" style="width: 94.63%"></div>
+                <div class="bg-emerald-600 h-2 rounded-full" style="width: {{ min($summary['persen_realisasi'], 100) }}%"></div>
               </div>
             </td>
           </tr>
@@ -551,6 +559,98 @@
     </div>
 
   </div>
+
+  <!-- 7B. SECTION PENYALURAN DANA DESA 2026 & RINGKASAN BOS-BOP / TPG -->
+  @if(!empty($danaDesaList) && count($danaDesaList) > 0)
+    @php
+      $ddPaguSum = collect($danaDesaList)->sum('pagu');
+      $ddRealSum = collect($danaDesaList)->sum('realisasi');
+      $ddPctSum = $ddPaguSum > 0 ? round(($ddRealSum / $ddPaguSum) * 100, 2) : 0;
+      $tkdExtra = app(\App\Services\SintesaImportService::class)->getSummary('tkd_extra_summary') ?? [];
+    @endphp
+    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+      <div class="p-3.5 sm:p-4 border-b border-slate-200/80 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+            <span>🏘️</span>
+            <span>PENYALURAN DANA DESA PER KABUPATEN/KOTA T.A. 2026</span>
+          </h2>
+          <p class="text-[11px] text-slate-400 mt-0.5">Data SINTESA TKD Dana Desa · {{ count($danaDesaList) }} Pemerintah Daerah di Aceh</p>
+        </div>
+        <span class="self-start sm:self-auto px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Salur: {{ number_format($ddPctSum, 2, ',', '.') }}%
+        </span>
+      </div>
+
+      @if(!empty($tkdExtra))
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 sm:p-4 bg-slate-50/40 border-b border-slate-100">
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Penyaluran BOS &amp; BOP ({{ $tkdExtra['bos_bop']['rows'] ?? 0 }} Baris)</div>
+              <div class="text-sm sm:text-base font-black text-blue-700 font-mono mt-0.5">Rp {{ number_format($tkdExtra['bos_bop']['total_nilai'] ?? 0, 0, ',', '.') }}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">{{ number_format($tkdExtra['bos_bop']['total_siswa'] ?? 0, 0, ',', '.') }} Peserta Didik Penerima</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">BOS-BOP</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Tunjangan Profesi Guru / TPG ({{ $tkdExtra['tpg']['rows'] ?? 0 }} Baris)</div>
+              <div class="text-sm sm:text-base font-black text-emerald-600 font-mono mt-0.5">Rp {{ number_format($tkdExtra['tpg']['total_nilai'] ?? 0, 0, ',', '.') }}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">Tersalur T.A. 2026 via KPPN Wilayah Aceh</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">TPG 2026</span>
+          </div>
+        </div>
+      @endif
+
+      <div class="overflow-x-auto max-h-[420px] overflow-y-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-extrabold border-b border-slate-200/90 text-[10px] sticky top-0">
+            <tr>
+              <th class="py-2.5 px-3 w-10 text-center">NO</th>
+              <th class="py-2.5 px-3">PEMERINTAH DAERAH</th>
+              <th class="py-2.5 px-3">KPPN PENYALUR</th>
+              <th class="py-2.5 px-3 text-right">PAGU DANA DESA</th>
+              <th class="py-2.5 px-3 text-right">REALISASI SALUR</th>
+              <th class="py-2.5 px-3 w-32">% SALUR</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @foreach ($danaDesaList as $dd)
+              @php
+                $ddPct = (float) ($dd['persentase'] ?? 0);
+              @endphp
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="py-2.5 px-3 text-center font-mono text-slate-400">{{ $loop->iteration }}</td>
+                <td class="py-2.5 px-3 font-bold text-slate-800">{{ $dd['pemda_nama'] ?? '-' }}</td>
+                <td class="py-2.5 px-3 text-[11px] text-slate-500 font-mono">[{{ $dd['kppn_kode'] ?? '-' }}] {{ $dd['kppn_nama'] ?? '-' }}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-800 whitespace-nowrap">Rp {{ number_format($dd['pagu'] ?? 0, 0, ',', '.') }}</td>
+                <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">Rp {{ number_format($dd['realisasi'] ?? 0, 0, ',', '.') }}</td>
+                <td class="py-2.5 px-3">
+                  <div class="flex items-center justify-between font-mono text-[11px] font-bold text-slate-700 mb-1">
+                    <span>{{ number_format($ddPct, 2, ',', '.') }}%</span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ min($ddPct, 100) }}%"></div>
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+          <tfoot class="bg-slate-100/90 border-t-2 border-slate-300 font-mono font-black text-xs text-slate-900">
+            <tr>
+              <td colspan="3" class="py-3 px-3 text-center uppercase tracking-wider font-extrabold text-slate-800">
+                TOTAL DANA DESA ACEH ({{ count($danaDesaList) }} PEMDA)
+              </td>
+              <td class="py-3 px-3 text-right font-bold whitespace-nowrap">Rp {{ number_format($ddPaguSum, 0, ',', '.') }}</td>
+              <td class="py-3 px-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">Rp {{ number_format($ddRealSum, 0, ',', '.') }}</td>
+              <td class="py-3 px-3 font-extrabold text-emerald-700">{{ number_format($ddPctSum, 2, ',', '.') }}%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  @endif
 
   <!-- 8. MODAL DETAIL INSPECTOR TKD -->
   <div id="tkdDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
@@ -780,8 +880,8 @@
     });
 
     // Update Baris Footer Total Sinkron dengan Filter
-    const baseTotalPagu = 409250181000;
-    const baseTotalReal = 402705996900;
+    const baseTotalPagu = dbhItemsData.reduce((s, x) => s + (x.pagu || 0), 0);
+    const baseTotalReal = dbhItemsData.reduce((s, x) => s + (x.realisasi || 0), 0);
     const calcTotalPagu = Math.round(baseTotalPagu * porsiFactor);
     const calcTotalReal = Math.round(baseTotalReal * porsiFactor);
     const calcTotalPct = calcTotalPagu > 0 ? (calcTotalReal / calcTotalPagu) * 100 : 0;

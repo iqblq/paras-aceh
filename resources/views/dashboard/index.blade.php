@@ -25,7 +25,7 @@
     <!-- Title Kanan -->
     <div class="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
       <h1 class="text-sm sm:text-lg font-black text-slate-900 tracking-tight">Executive Dashboard Perbendaharaan</h1>
-      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono">Monitoring Komprehensif 8 KPPN Lingkup Kanwil DJPb Provinsi Aceh ({{ $kpi['total_satker_count'] ?? 789 }} Satker)</p>
+      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono">Monitoring Komprehensif {{ count($kppnRanking['details'] ?? []) ?: 7 }} KPPN Lingkup Kanwil DJPb Provinsi Aceh ({{ $kpi['total_satker_count'] ?? 768 }} Satker K/L)</p>
     </div>
   </div>
 
@@ -38,8 +38,8 @@
       <!-- Left: Total Pagu -->
       <div>
         <div class="flex items-center gap-1.5 text-slate-300 text-xs sm:text-sm font-medium mb-1">
-          <span class="tracking-wide uppercase text-[11px] font-bold text-slate-400">Total Alokasi Pagu DIPA</span>
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-500 text-[10px] font-serif cursor-help text-slate-400" title="Total Alokasi Pagu DIPA APBN Kanwil DJPb Provinsi Aceh">ⓘ</span>
+          <span class="tracking-wide uppercase text-[11px] font-bold text-slate-400">PAGU REALISASI SATKER K/L · Total Pagu DIPA</span>
+          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-500 text-[10px] font-serif cursor-help text-slate-400" title="Total Alokasi Pagu DIPA Satker Kementerian/Lembaga Kanwil DJPb Provinsi Aceh">ⓘ</span>
         </div>
         <div id="heroTotalPagu" class="text-xl sm:text-3xl lg:text-4xl font-black text-white font-mono tracking-tight break-all sm:break-normal">
           {{ $kpi['total_pagu_formatted'] }}
@@ -103,19 +103,20 @@
     <!-- Bottom Row: Realisasi Cutoff info on Left, Timestamp on Right -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-slate-700/70 text-[11px] sm:text-xs text-slate-300">
       
-      <!-- Left: Cutoff SP2D Info -->
+      <!-- Left: Pagu Blokir Info -->
       <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded-md bg-blue-900/70 border border-blue-500/30 flex items-center justify-center shrink-0">
-          <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+        <div class="w-5 h-5 rounded-md bg-rose-900/70 border border-rose-500/30 flex items-center justify-center shrink-0">
+          <svg class="w-3 h-3 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
           </svg>
         </div>
         <div class="flex items-baseline gap-1.5 flex-wrap">
-          <span class="text-slate-300">Realisasi s.d {{ $kpi['cutoff_date'] ?? '17 November 2026' }}</span>
-          <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-slate-500 text-[9px] font-serif cursor-help text-slate-400" title="Realisasi penerbitan SP2D online cut-off">ⓘ</span>
-          <span id="heroCutoffVal" class="font-black text-white font-mono text-xs sm:text-sm">
-            {{ $kpi['realisasi_sp2d_cutoff_formatted'] }}
+          <span class="text-slate-300">Pagu Blokir</span>
+          <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-slate-500 text-[9px] font-serif cursor-help text-slate-400" title="Total Pagu DIPA Satker K/L berstatus blokir">ⓘ</span>
+          <span id="heroCutoffVal" class="font-black text-rose-300 font-mono text-xs sm:text-sm">
+            {{ $kpi['total_blokir_formatted'] }}
           </span>
+          <span class="text-[10px] font-mono text-rose-400/90">({{ number_format($kpi['persen_blokir'], 2, ',', '.') }}%)</span>
         </div>
       </div>
 
@@ -130,38 +131,51 @@
 
   <!-- SECTION 2: RADAR KINERJA SEMUA KPPN SE-PROVINSI ACEH -->
   <div class="space-y-3">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-0.5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-0.5">
       <div class="flex items-center gap-2 text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase">
         <span class="text-base">📍</span>
-        <span>RADAR KINERJA 8 KPPN LINGKUP KANWIL DJPB PROVINSI ACEH</span>
+        <span>RADAR KINERJA {{ count($kppnRanking['details'] ?? []) ?: 7 }} KPPN LINGKUP KANWIL DJPB PROVINSI ACEH</span>
       </div>
-      <span class="text-[11px] text-slate-400 font-mono">Peringkat Serapan Anggaran Regional Se-Aceh</span>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <button id="btnKppnPct" onclick="switchKppnView('percent')" class="px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all">
+            Persentase &amp; Nominal
+          </button>
+          <button id="btnKppnNominal" onclick="switchKppnView('nominal')" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            Batang Nominal (T)
+          </button>
+        </div>
+        <span class="text-[11px] text-slate-400 font-mono hidden md:inline">Realisasi / Pagu DIPA K/L</span>
+      </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-5 shadow-xs">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6 items-center">
-        
-        <!-- Left 2 Cols: Horizontal Ranking Chart -->
-        <div class="lg:col-span-2">
-          <div class="relative h-64 sm:h-72 lg:h-80 w-full">
-            <canvas id="chartRadarKppn"></canvas>
-          </div>
+    <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-5 shadow-xs space-y-5">
+      
+      <!-- Full Width Horizontal Ranking Chart -->
+      <div class="w-full">
+        <div class="relative h-72 sm:h-80 w-full">
+          <canvas id="chartRadarKppn"></canvas>
         </div>
+      </div>
 
-        <!-- Right Col: Regional Leadership Summary Cards -->
-        <div class="space-y-3 border-t lg:border-t-0 lg:border-l border-slate-100 lg:pl-6 pt-4 lg:pt-0">
-          <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Highlight Capaian Regional</div>
-          
-          @php
-            $topKppn = $kppnRanking['details'][0] ?? ['nama' => 'Lhokseumawe', 'persentase_formatted' => '39,98%'];
-            $porsiKppn = collect($kppnRanking['details'] ?? [])->sortByDesc('pagu')->first() ?? ['nama' => 'Banda Aceh', 'pagu' => 40296911682000, 'persentase_formatted' => '38,66%'];
-          @endphp
+      <!-- Bottom Row: Highlight Capaian Regional (3 Cards Horizontal) -->
+      <div class="border-t border-slate-100 pt-4">
+        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Highlight Capaian Regional</div>
+        
+        @php
+          $topKppn = $kppnRanking['details'][0] ?? ['nama' => 'Kutacane', 'persentase_formatted' => '86,97%', 'realisasi' => 308199457445, 'pagu' => 354357433000];
+          $porsiKppn = collect($kppnRanking['details'] ?? [])->sortByDesc('pagu')->first() ?? ['nama' => 'Banda Aceh', 'pagu' => 27364991464000, 'realisasi' => 16340375248432, 'persentase_formatted' => '59,71%'];
+          $cleanNamaTop = ucwords(strtolower(str_replace('L A N G S A', 'Langsa', $topKppn['nama'])));
+          $cleanNamaPorsi = ucwords(strtolower(str_replace('L A N G S A', 'Langsa', $porsiKppn['nama'])));
+        @endphp
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold text-emerald-900">KPPN {{ ucwords(strtolower($topKppn['nama'])) }}</span>
+              <span class="text-xs font-extrabold text-emerald-900">KPPN {{ $cleanNamaTop }}</span>
               <span class="text-xs font-black text-emerald-700 font-mono">{{ $topKppn['persentase_formatted'] }}</span>
             </div>
-            <p class="text-[11px] text-emerald-700">Peringkat 1 serapan anggaran tertinggi di wilayah Aceh.</p>
+            <p class="text-[11px] text-emerald-700">Peringkat 1 serapan tertinggi (Real: Rp {{ number_format(($topKppn['realisasi'] ?? 0) / 1e9, 1, ',', '.') }} M / Pagu: Rp {{ number_format(($topKppn['pagu'] ?? 0) / 1e9, 1, ',', '.') }} M).</p>
           </div>
 
           <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80">
@@ -169,103 +183,16 @@
               <span class="text-xs font-extrabold text-blue-900">Rata-rata Regional Aceh</span>
               <span class="text-xs font-black text-blue-700 font-mono">{{ number_format($kpi['persen_realisasi'], 2, ',', '.') }}%</span>
             </div>
-            <p class="text-[11px] text-blue-700">Capaian realisasi konsolidasi 8 KPPN se-Provinsi Aceh.</p>
+            <p class="text-[11px] text-blue-700">Capaian realisasi Satker K/L: {{ $kpi['total_realisasi_formatted'] }} dari {{ $kpi['total_pagu_formatted'] }}.</p>
           </div>
 
           <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold text-slate-800">KPPN {{ ucwords(strtolower($porsiKppn['nama'])) }}</span>
+              <span class="text-xs font-extrabold text-slate-800">KPPN {{ $cleanNamaPorsi }}</span>
               <span class="text-xs font-black text-slate-900 font-mono">{{ $porsiKppn['persentase_formatted'] }}</span>
             </div>
-            <p class="text-[11px] text-slate-500">Mengelola porsi pagu DIPA terbesar: Rp {{ round($porsiKppn['pagu'] / 1000000000000, 2) }} T.</p>
+            <p class="text-[11px] text-slate-500">Pagu DIPA terbesar: Rp {{ number_format(($porsiKppn['pagu'] ?? 0) / 1e12, 2, ',', '.') }} T (Real: Rp {{ number_format(($porsiKppn['realisasi'] ?? 0) / 1e12, 2, ',', '.') }} T).</p>
           </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 3: "💰 PAGU DAN REALISASI" (TOTAL KESELURUHAN - 4 EXECUTIVE METRIC CARDS) -->
-  <div class="space-y-3">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-0.5">
-      <div class="flex items-center gap-2 text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase">
-        <span>💰</span>
-        <span>PAGU DAN REALISASI </span>
-      </div>
-      <span class="text-[11px] font-mono font-semibold text-slate-400">Total K/L + BA BUN · Per {{ date('d M Y') }}</span>
-    </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-      
-      <!-- Card 1: Total Pagu -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 p-4 2xl:p-5 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col justify-between group">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2.5">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">TOTAL PAGU DIPA</span>
-            <span class="shrink-0 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-mono text-[10px] font-bold border border-blue-200">{{ $kpi['total_satker_count'] ?? 789 }} Satker</span>
-          </div>
-          <div class="flex items-baseline gap-1 text-slate-900 font-mono font-black tracking-tight group-hover:text-blue-700 transition-colors whitespace-nowrap">
-            <span class="text-xs font-bold opacity-70">Rp</span>
-            <span class="text-lg sm:text-xl xl:text-[15px] 2xl:text-[19px]">{{ trim(str_replace('Rp', '', $kpi['total_pagu_formatted'])) }}</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-400 font-medium pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
-          <span>BA K/L + BA BUN (TKD)</span>
-          <span class="font-bold text-blue-600 font-mono">100%</span>
-        </div>
-      </div>
-
-      <!-- Card 2: Total Realisasi -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 p-4 2xl:p-5 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col justify-between group">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2.5">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">REALISASI BELANJA</span>
-            <span class="shrink-0 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-mono text-[10px] font-black border border-emerald-200">{{ $kpi['persen_realisasi'] }}%</span>
-          </div>
-          <div class="flex items-baseline gap-1 text-emerald-600 font-mono font-black tracking-tight group-hover:text-emerald-700 transition-colors whitespace-nowrap">
-            <span class="text-xs font-bold opacity-75">Rp</span>
-            <span class="text-lg sm:text-xl xl:text-[15px] 2xl:text-[19px]">{{ trim(str_replace('Rp', '', $kpi['total_realisasi_formatted'])) }}</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-emerald-600 font-medium pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
-          <span>Target Q4: 90%</span>
-          <span class="font-bold font-mono">↑ +4.2% YoY</span>
-        </div>
-      </div>
-
-      <!-- Card 3: Total Pagu Blokir -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 p-4 2xl:p-5 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col justify-between group">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2.5">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">PAGU TERBLOKIR</span>
-            <span class="shrink-0 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-mono text-[10px] font-bold border border-rose-200">{{ $kpi['persen_blokir'] }}%</span>
-          </div>
-          <div class="flex items-baseline gap-1 text-rose-600 font-mono font-black tracking-tight group-hover:text-rose-700 transition-colors whitespace-nowrap">
-            <span class="text-xs font-bold opacity-75">Rp</span>
-            <span class="text-lg sm:text-xl xl:text-[15px] 2xl:text-[19px]">{{ trim(str_replace('Rp', '', $kpi['total_blokir_formatted'])) }}</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-rose-500 font-medium pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
-          <span>Automatic Adjustment</span>
-          <span class="font-bold font-mono">{{ $kpi['persen_blokir'] }}%</span>
-        </div>
-      </div>
-
-      <!-- Card 4: Sisa Pagu Tersedia -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 p-4 2xl:p-5 shadow-xs hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col justify-between group">
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2.5">
-            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">SISA PAGU TERSEDIA</span>
-            <span class="shrink-0 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-mono text-[10px] font-bold border border-amber-200">{{ $kpi['persen_sisa'] }}%</span>
-          </div>
-          <div class="flex items-baseline gap-1 text-amber-600 font-mono font-black tracking-tight group-hover:text-amber-700 transition-colors whitespace-nowrap">
-            <span class="text-xs font-bold opacity-75">Rp</span>
-            <span class="text-lg sm:text-xl xl:text-[15px] 2xl:text-[19px]">{{ trim(str_replace('Rp', '', $kpi['sisa_pagu_formatted'])) }}</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-amber-600 font-medium pt-3 mt-3 border-t border-slate-100 flex items-center justify-between">
-          <span>Sisa Penyerapan Akhir Tahun</span>
-          <span class="font-bold font-mono">Tersedia</span>
         </div>
       </div>
 
@@ -313,55 +240,6 @@
     </div>
   </div>
 
-  <!-- SECTION 5: "💼 PAGU REALISASI SATKER K/L" (PERSIS GAMBAR 1) -->
-  <div class="space-y-3">
-    <div class="flex items-center gap-2 text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase px-0.5">
-      <span>💼</span>
-      <span>PAGU REALISASI SATKER K/L</span>
-    </div>
-
-    <!-- 3 KARTU PAGU REALISASI SATKER K/L -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-      
-      <!-- Card K/L 1: Total Pagu DIPA -->
-      <div class="bg-white rounded-2xl border-t-4 border-t-blue-500 border border-slate-200 p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold text-slate-700">Total Pagu DIPA</span>
-          <span class="w-6 h-6 rounded bg-blue-500 flex items-center justify-center text-white text-xs font-bold">📁</span>
-        </div>
-        <div class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 font-mono tracking-tight break-all sm:break-normal">
-          {{ $satkerKl['pagu_formatted'] }}
-        </div>
-        <div class="text-[11px] text-slate-400 mt-2">Alokasi {{ $satkerKl['satker_count'] }} Satker Kementerian/Lembaga</div>
-      </div>
-
-      <!-- Card K/L 2: Total Realisasi -->
-      <div class="bg-white rounded-2xl border-t-4 border-t-emerald-500 border border-slate-200 p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold text-slate-700">Total Realisasi</span>
-          <span class="text-base">💸</span>
-        </div>
-        <div class="text-lg sm:text-xl lg:text-2xl font-black text-emerald-600 font-mono tracking-tight break-all sm:break-normal">
-          {{ $satkerKl['realisasi_formatted'] }}
-        </div>
-        <div class="text-[11px] text-emerald-600 font-bold mt-2">{{ $satkerKl['persen'] }}% Serapan Belanja K/L</div>
-      </div>
-
-      <!-- Card K/L 3: Total Pagu Blokir -->
-      <div class="bg-white rounded-2xl border-t-4 border-t-rose-500 border border-slate-200 p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold text-slate-700">Total Pagu Blokir</span>
-          <span class="w-5 h-5 rounded-full border-2 border-rose-500 flex items-center justify-center text-rose-500 font-bold text-[10px]">🚫</span>
-        </div>
-        <div class="text-lg sm:text-xl lg:text-2xl font-black text-rose-600 font-mono tracking-tight break-all sm:break-normal">
-          {{ $satkerKl['blokir_formatted'] }}
-        </div>
-        <div class="text-[11px] text-rose-500 font-medium mt-2">{{ $satkerKl['persen_blokir'] }}% Pagu Terblokir</div>
-      </div>
-
-    </div>
-  </div>
-
   <!-- SECTION 6: "📊 GRAFIK PAGU & REALISASI SATKER BA BUN (TKD ACEH)" (DENGAN FILTER KPPN & KABUPATEN/KOTA) -->
   <div class="space-y-3">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-sm">
@@ -396,20 +274,9 @@
             <select id="filterSatkerBUN" 
                     onchange="filterChartSatkerBUN(this.value)" 
                     class="w-full sm:w-auto appearance-none pl-8 pr-8 py-1.5 bg-slate-50 hover:bg-slate-100 border border-purple-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 cursor-pointer transition-colors shadow-xs">
-              <option value="ALL">Semua Satker BUN (3 Satker)</option>
-              <optgroup label="🏢 Satker Penyalur BUN (Kanwil DJPb Provinsi Aceh)">
-                <option value="satker_500133">500133 - Dana Desa & Otsus</option>
-                <option value="satker_700254">700254 - Transfer Umum (DAU & DBH)</option>
-                <option value="satker_600061">600061 - DAK Fisik & Nonfisik</option>
-              </optgroup>
-              <optgroup label="📍 Filter Wilayah Kabupaten / Kota">
-                <option value="prov_aceh">Pemerintah Provinsi Aceh</option>
-                <option value="banda_aceh">Kota Banda Aceh</option>
-                <option value="aceh_besar">Kabupaten Aceh Besar</option>
-                <option value="pidie">Kabupaten Pidie</option>
-                <option value="pidie_jaya">Kabupaten Pidie Jaya</option>
-                <option value="sabang">Kota Sabang</option>
-              </optgroup>
+              @foreach($bunData as $bKey => $bItem)
+                <option value="{{ $bKey }}">{{ $bItem['label'] ?? $bKey }}</option>
+              @endforeach
             </select>
             <span class="absolute right-2.5 text-slate-400 pointer-events-none text-[10px]">▼</span>
           </div>
@@ -417,56 +284,16 @@
       </div>
     </div>
 
-    <!-- Filter Quick Buttons (Persis Gambar 8: Filter Cepat Satker BUN + Pilihan Wilayah) -->
+    <!-- Filter Quick Buttons (Dinamis dari Database SQLite per KPPN) -->
     <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar sm:flex-wrap text-xs">
       <span class="text-[11px] font-bold text-slate-400 mr-1 shrink-0">Filter:</span>
-      <button onclick="filterChartSatkerBUN('ALL')" 
-              data-code="ALL"
-              class="shrink-0 bun-filter-pill px-3 py-1 rounded-lg font-semibold text-xs transition-all bg-purple-600 text-white shadow-xs border border-purple-600">
-        Semua (3 Satker)
-      </button>
-      <button onclick="filterChartSatkerBUN('satker_500133')" 
-              data-code="satker_500133"
-              class="shrink-0 bun-filter-pill px-3 py-1 rounded-lg font-semibold text-xs transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        500133 (Dana Desa & Otsus)
-      </button>
-      <button onclick="filterChartSatkerBUN('satker_700254')" 
-              data-code="satker_700254"
-              class="shrink-0 bun-filter-pill px-3 py-1 rounded-lg font-semibold text-xs transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        700254 (Transfer Umum DAU/DBH)
-      </button>
-      <button onclick="filterChartSatkerBUN('satker_600061')" 
-              data-code="satker_600061"
-              class="shrink-0 bun-filter-pill px-3 py-1 rounded-lg font-semibold text-xs transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        600061 (DAK Fisik & Nonfisik)
-      </button>
-
-      <span class="text-slate-300 mx-1 shrink-0">|</span>
-      <button onclick="filterChartSatkerBUN('banda_aceh')" 
-              data-code="banda_aceh"
-              class="shrink-0 bun-filter-pill px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        Kota Banda Aceh
-      </button>
-      <button onclick="filterChartSatkerBUN('aceh_besar')" 
-              data-code="aceh_besar"
-              class="shrink-0 bun-filter-pill px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        Kab. Aceh Besar
-      </button>
-      <button onclick="filterChartSatkerBUN('pidie')" 
-              data-code="pidie"
-              class="shrink-0 bun-filter-pill px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        Kab. Pidie
-      </button>
-      <button onclick="filterChartSatkerBUN('pidie_jaya')" 
-              data-code="pidie_jaya"
-              class="shrink-0 bun-filter-pill px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        Kab. Pidie Jaya
-      </button>
-      <button onclick="filterChartSatkerBUN('sabang')" 
-              data-code="sabang"
-              class="shrink-0 bun-filter-pill px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all bg-white text-slate-700 hover:bg-purple-50 border border-slate-200">
-        Kota Sabang
-      </button>
+      @foreach($bunData as $bKey => $bItem)
+        <button onclick="filterChartSatkerBUN('{{ $bKey }}')" 
+                data-code="{{ $bKey }}"
+                class="shrink-0 bun-filter-pill px-3 py-1 rounded-lg font-semibold text-xs transition-all {{ $bKey === 'ALL' ? 'bg-purple-600 text-white shadow-xs border border-purple-600' : 'bg-white text-slate-700 hover:bg-purple-50 border border-slate-200' }}">
+          {{ $bItem['label'] ?? $bKey }}
+        </button>
+      @endforeach
     </div>
 
     <!-- Chart Card BA BUN (Persis Tampilan Gambar 1) -->
@@ -475,13 +302,13 @@
         <canvas id="chartSatkerBUN"></canvas>
       </div>
       <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-mono gap-1">
-        <span id="labelSatkerBUNFoot">Satker Penyalur Transfer Ke Daerah (TKD) · Kanwil DJPb Provinsi Aceh</span>
+        <span id="labelSatkerBUNFoot">{{ $bunData['ALL']['footer'] ?? 'Satker Penyalur Transfer Ke Daerah (TKD) · Kanwil DJPb Provinsi Aceh' }}</span>
         <span>Skala dalam Miliar Rupiah</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 7: "🏛️ PAGU REALISASI SATKER BA BUN" (PERSIS GAMBAR 2 & 4) -->
+  <!-- SECTION 7: "🏛️ PAGU REALISASI SATKER BA BUN" (DINAMIS DARI DATABASE) -->
   <div class="space-y-3">
     <div class="flex items-center gap-2 text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase px-0.5">
       <span>🏛️</span>
@@ -498,9 +325,9 @@
           <span class="text-base">📋</span>
         </div>
         <div id="bunCardPagu" class="text-lg sm:text-xl lg:text-2xl font-black text-slate-900 font-mono tracking-tight break-all sm:break-normal">
-          Rp 12.931.920.218.000
+          {{ $bunData['ALL']['cardPagu'] ?? 'Rp 0' }}
         </div>
-        <div id="bunCardSubPagu" class="text-[11px] text-slate-400 mt-2">Alokasi 3 Satker Penyalur BUN · Kanwil DJPb Provinsi Aceh</div>
+        <div id="bunCardSubPagu" class="text-[11px] text-slate-400 mt-2">{{ $bunData['ALL']['subPagu'] ?? 'Alokasi Satker Penyalur BUN' }}</div>
       </div>
 
       <!-- Card BUN 2: Total Realisasi -->
@@ -510,9 +337,9 @@
           <span class="text-base">💵</span>
         </div>
         <div id="bunCardRealisasi" class="text-lg sm:text-xl lg:text-2xl font-black text-emerald-600 font-mono tracking-tight break-all sm:break-normal">
-          Rp 12.237.037.761.537
+          {{ $bunData['ALL']['cardRealisasi'] ?? 'Rp 0' }}
         </div>
-        <div id="bunCardSubRealisasi" class="text-[11px] text-emerald-600 font-bold mt-2">94,63% Capaian Penyaluran BUN</div>
+        <div id="bunCardSubRealisasi" class="text-[11px] text-emerald-600 font-bold mt-2">{{ $bunData['ALL']['subRealisasi'] ?? 'Realisasi Penyaluran BUN' }}</div>
       </div>
 
       <!-- Card BUN 3: Total Pagu Blokir -->
@@ -522,9 +349,9 @@
           <span class="w-4 h-4 rounded-full bg-rose-500 inline-block"></span>
         </div>
         <div id="bunCardBlokir" class="text-lg sm:text-xl lg:text-2xl font-black text-rose-600 font-mono tracking-tight break-all sm:break-normal">
-          Rp 0
+          {{ $bunData['ALL']['cardBlokir'] ?? 'Rp 0' }}
         </div>
-        <div id="bunCardSubBlokir" class="text-[11px] text-emerald-600 font-semibold mt-2">Nihil / Tidak Ada Blokir</div>
+        <div id="bunCardSubBlokir" class="text-[11px] text-emerald-600 font-semibold mt-2">{{ $bunData['ALL']['subBlokir'] ?? 'Nihil / Tidak Ada Blokir' }}</div>
       </div>
 
     </div>
@@ -578,46 +405,82 @@
   Chart.defaults.font.family = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif';
   Chart.defaults.color = '#475569';
 
-  // 1. CHART RADAR KINERJA 8 KPPN SE-PROVINSI ACEH (REGIONAL EXECUTIVE VIEW)
+  // 1. CHART RADAR KINERJA 7 KPPN SE-PROVINSI ACEH (PERSENTASE + NOMINAL)
   let chartRadarKppnInstance = null;
+  let currentKppnMode = 'percent';
+  const kppnRankingMaster = @json($kppnRanking);
+
+  function formatShortNom(valRp) {
+    if (valRp >= 1e12) return 'Rp ' + (valRp / 1e12).toFixed(2).replace('.', ',') + ' T';
+    if (valRp >= 1e9) return 'Rp ' + (valRp / 1e9).toFixed(1).replace('.', ',') + ' M';
+    return 'Rp ' + Math.round(valRp / 1e6).toLocaleString('id-ID') + ' Jt';
+  }
+
   function initChartRadarKppn() {
     const ctx = document.getElementById('chartRadarKppn');
     if (!ctx) return;
 
-    const ranking = @json($kppnRanking);
+    const cleanLabels = (kppnRankingMaster.labels || []).map(l => l.replace(/L\s+A\s+N\s+G\s+S\s+A/i, 'Langsa'));
+    const details = kppnRankingMaster.details || [];
 
     chartRadarKppnInstance = new Chart(ctx.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: ranking.labels,
+        labels: cleanLabels,
         datasets: [{
           label: '% Realisasi',
-          data: ranking.persen,
-          backgroundColor: ranking.persen.map(p => p >= 80 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
+          data: kppnRankingMaster.persen,
+          backgroundColor: kppnRankingMaster.persen.map(p => p >= 80 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
           borderRadius: 6,
-          barPercentage: 0.65,
-          categoryPercentage: 0.75
+          barPercentage: 0.62,
+          categoryPercentage: 0.78
         }]
       },
       options: {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+          padding: {
+            right: window.innerWidth >= 640 ? 210 : 125
+          }
+        },
         plugins: {
           legend: { display: false },
           datalabels: {
             display: true,
             anchor: 'end',
             align: 'right',
+            offset: 6,
             color: '#0f172a',
-            font: { weight: '800', size: 12 },
-            formatter: (v) => v.toFixed(2) + '%'
+            font: { weight: '800', size: window.innerWidth >= 640 ? 11.5 : 10 },
+            formatter: (v, context) => {
+              const d = details[context.dataIndex];
+              if (currentKppnMode === 'nominal') {
+                if (!d) return v.toFixed(2) + ' T';
+                const valRp = context.datasetIndex === 0 ? d.pagu : d.realisasi;
+                return context.datasetIndex === 1
+                  ? `${formatShortNom(valRp)} (${d.persentase_formatted})`
+                  : formatShortNom(valRp);
+              }
+              if (!d) return v.toFixed(2).replace('.', ',') + '%';
+              const realShort = formatShortNom(d.realisasi);
+              const paguShort = formatShortNom(d.pagu);
+              return window.innerWidth >= 640
+                ? `${v.toFixed(2).replace('.', ',')}%  ·  ${realShort} / ${paguShort}`
+                : `${v.toFixed(1).replace('.', ',')}% (${realShort})`;
+            }
           },
           tooltip: {
             callbacks: {
               label: function(ctx) {
-                const idx = ctx.dataIndex;
-                return ` Serapan: ${ctx.parsed.x.toFixed(2)}% (Pagu: Rp ${ranking.pagu[idx]} T · Real: Rp ${ranking.realisasi[idx]} T)`;
+                const d = details[ctx.dataIndex];
+                if (!d) return ` Serapan: ${ctx.parsed.x.toFixed(2)}%`;
+                return [
+                  ` Serapan: ${d.persentase_formatted}`,
+                  ` Realisasi: ${d.realisasi_formatted}`,
+                  ` Pagu DIPA: ${d.pagu_formatted}`
+                ];
               }
             }
           }
@@ -640,6 +503,67 @@
         }
       }
     });
+  }
+
+  function switchKppnView(mode) {
+    if (!chartRadarKppnInstance) return;
+    currentKppnMode = mode;
+
+    const btnPct = document.getElementById('btnKppnPct');
+    const btnNom = document.getElementById('btnKppnNominal');
+    const details = kppnRankingMaster.details || [];
+
+    if (mode === 'nominal') {
+      const paguT = details.map(d => +(d.pagu / 1e12).toFixed(3));
+      const realT = details.map(d => +(d.realisasi / 1e12).toFixed(3));
+      const maxT = Math.ceil(Math.max(...paguT, 1) * 1.1);
+
+      chartRadarKppnInstance.data.datasets = [
+        {
+          label: 'Pagu DIPA',
+          data: paguT,
+          backgroundColor: '#1e40af',
+          borderRadius: 4,
+          barPercentage: 0.72,
+          categoryPercentage: 0.75
+        },
+        {
+          label: 'Realisasi',
+          data: realT,
+          backgroundColor: '#f59e0b',
+          borderRadius: 4,
+          barPercentage: 0.72,
+          categoryPercentage: 0.75
+        }
+      ];
+      chartRadarKppnInstance.options.plugins.legend.display = true;
+      chartRadarKppnInstance.options.layout.padding.right = window.innerWidth >= 640 ? 150 : 90;
+      chartRadarKppnInstance.options.scales.x.max = maxT;
+      chartRadarKppnInstance.options.scales.x.ticks.stepSize = Math.max(Math.ceil(maxT / 5), 1);
+      chartRadarKppnInstance.options.scales.x.ticks.callback = (v) => v + ' T';
+
+      if (btnNom) btnNom.className = 'px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all';
+      if (btnPct) btnPct.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all';
+    } else {
+      chartRadarKppnInstance.data.datasets = [{
+        label: '% Realisasi',
+        data: kppnRankingMaster.persen,
+        backgroundColor: kppnRankingMaster.persen.map(p => p >= 80 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
+        borderRadius: 6,
+        barPercentage: 0.62,
+        categoryPercentage: 0.78
+      }];
+      chartRadarKppnInstance.options.plugins.legend.display = false;
+      chartRadarKppnInstance.options.layout.padding.right = window.innerWidth >= 640 ? 210 : 125;
+      chartRadarKppnInstance.options.scales.x.max = 100;
+      chartRadarKppnInstance.options.scales.x.ticks.stepSize = 20;
+      chartRadarKppnInstance.options.scales.x.ticks.callback = (v) => v + '%';
+
+      if (btnPct) btnPct.className = 'px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all';
+      if (btnNom) btnNom.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all';
+    }
+
+    chartRadarKppnInstance.update();
   }
 
   // 2. CHART 10 K/L TERBESAR DENGAN TOGGLE NOMINAL VS PERSEN
@@ -844,10 +768,10 @@
         scales: {
           y: {
             beginAtZero: true,
-            max: 7000,
+            max: Math.max(Math.ceil((Math.max(...initData.pagu, ...initData.realisasi, 100) * 1.15) / 1000) * 1000, 1000),
             ticks: {
-              stepSize: 1000,
-              callback: (val) => val === 0 ? '0' : 'Rp ' + val.toFixed(1) + ' M',
+              stepSize: Math.max(Math.round((Math.ceil((Math.max(...initData.pagu, ...initData.realisasi, 100) * 1.15) / 1000) * 1000) / 5 / 500) * 500, 500),
+              callback: (val) => val === 0 ? '0' : 'Rp ' + val.toLocaleString('id-ID') + ' M',
               font: { size: 11.5, weight: '600' },
               color: '#334155'
             },
@@ -862,7 +786,7 @@
     });
   }
 
-  // Fungsi Filter Dinamis Wilayah KPPN / Kabupaten Kota di Aceh
+  // Fungsi Filter Dinamis Wilayah KPPN di Aceh
   function filterChartSatkerBUN(code) {
     currentBunFilter = code;
     const item = bunMasterData[code] || bunMasterData['ALL'];
@@ -872,15 +796,10 @@
       chartSatkerBUNInstance.data.datasets[0].data = item.pagu;
       chartSatkerBUNInstance.data.datasets[1].data = item.realisasi;
 
-      const maxVal = Math.max(...item.pagu, ...item.realisasi);
-      if (code === 'ALL' || code === 'kppn_001') {
-        chartSatkerBUNInstance.options.scales.y.max = 7000;
-        chartSatkerBUNInstance.options.scales.y.ticks.stepSize = 1000;
-      } else {
-        const ceiling = Math.ceil((maxVal * 1.2) / 500) * 500;
-        chartSatkerBUNInstance.options.scales.y.max = Math.max(ceiling, 500);
-        chartSatkerBUNInstance.options.scales.y.ticks.stepSize = Math.max(Math.round(ceiling / 5 / 100) * 100, 100);
-      }
+      const maxVal = Math.max(...item.pagu, ...item.realisasi, 100);
+      const ceiling = Math.max(Math.ceil((maxVal * 1.15) / 500) * 500, 500);
+      chartSatkerBUNInstance.options.scales.y.max = ceiling;
+      chartSatkerBUNInstance.options.scales.y.ticks.stepSize = Math.max(Math.round(ceiling / 5 / 100) * 100, 100);
 
       chartSatkerBUNInstance.update();
     }

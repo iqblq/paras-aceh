@@ -51,11 +51,20 @@
         <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('dashboard') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }} uppercase tracking-wider">KPI</span>
       </a>
 
-      <!-- Tab 2: Realisasi Anggaran 789 Satker -->
+      @php
+        $sbSvc = app(\App\Services\SintesaImportService::class);
+        $sbSatkerCount = count($sbSvc->getSummary('satker_master') ?? []) ?: 789;
+        $sbPrioCount = count($sbSvc->getSummary('tematik_prioritas_items') ?? []) ?: 38;
+        $sbStratCount = count($sbSvc->getSummary('program_strategis_items') ?? []) ?: 90;
+        $sbJalanCount = count($sbSvc->getSummary('jalan_items') ?? []) ?: 8;
+        $sbBansosCount = count($sbSvc->getSummary('bansos_items') ?? []) ?: 207;
+      @endphp
+
+      <!-- Tab 2: Realisasi Anggaran Satker -->
       <a href="{{ route('satker.index') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('satker.*') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Realisasi Anggaran</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('satker.*') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">789</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('satker.*') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbSatkerCount }}</span>
       </a>
 
       <div class="pt-4 px-3.5 pb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -66,35 +75,28 @@
       <a href="{{ route('tematik.prioritas') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.prioritas') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Prioritas Presiden</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.prioritas') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">72</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.prioritas') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbPrioCount }}</span>
       </a>
 
       <!-- Tab 4: Program Strategis -->
       <a href="{{ route('tematik.strategis') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.strategis') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Program Strategis</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.strategis') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">52</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.strategis') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbStratCount }}</span>
       </a>
 
-      <!-- Tab 5: Penanganan Bencana -->
-      <a href="{{ route('tematik.bencana') }}" 
-         class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.bencana') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
-        <span>Penanganan Bencana</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.bencana') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">22</span>
-      </a>
-
-      <!-- Tab 6: Preservasi Jalan -->
+      <!-- Tab 5: Preservasi Jalan -->
       <a href="{{ route('tematik.jalan') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.jalan') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Preservasi Jalan</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.jalan') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">26</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.jalan') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbJalanCount }}</span>
       </a>
 
-      <!-- Tab 7: Bantuan Sosial -->
+      <!-- Tab 6: Bantuan Sosial -->
       <a href="{{ route('tematik.bansos') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.bansos') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Bantuan Sosial</span>
-        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.bansos') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">6</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.bansos') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbBansosCount }}</span>
       </a>
 
       <!-- Tab 8: Transfer Ke Daerah -->
