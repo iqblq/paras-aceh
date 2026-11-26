@@ -21,10 +21,30 @@ class SintesaImportService
             return ['status' => 'error', 'message' => "Folder dataset tidak ditemukan: {$folder}"];
         }
 
-        // 1. Prioritaskan file gabungan terbaru: Inquiry Data Pagu & Realisasi (2. Pagu Realisasi)
-        $paguRealFile = $this->findLatestFile($folder, 'inquiry_data_pagu_realisasi_2026_*.csv');
-        if ($paguRealFile) {
-            $results['pagu_realisasi'] = $this->importPaguRealisasi($paguRealFile);
+        // 1. Scan seluruh file inquiry_data_pagu_realisasi_2026_*.csv:
+        //    - File yang punya kolom akun_kode -> Master Pagu, Realisasi & Blokir (K/L, BUN, Jenis Belanja, TKD DBH/Otsus)
+        //    - File yang punya kolom outputkro_kode -> Ekstraksi Tematik Penanganan Bencana per Output/Kegiatan
+        $paguRealFiles = glob("{$folder}/inquiry_data_pagu_realisasi_2026_*.csv") ?: [];
+        usort($paguRealFiles, fn($a, $b) => filemtime($b) <=> filemtime($a));
+
+        $paguRealAkunFile = null;
+        $paguRealOutputFile = null;
+        foreach ($paguRealFiles as $prf) {
+            $fh = fopen($prf, 'r');
+            $hdr = $fh ? fgetcsv($fh) : [];
+            if ($fh) fclose($fh);
+            $hdrStr = strtolower(implode(',', $hdr ?: []));
+
+            if (!$paguRealAkunFile && str_contains($hdrStr, 'akun_kode')) {
+                $paguRealAkunFile = $prf;
+            }
+            if (!$paguRealOutputFile && str_contains($hdrStr, 'outputkro_kode')) {
+                $paguRealOutputFile = $prf;
+            }
+        }
+
+        if ($paguRealAkunFile) {
+            $results['pagu_realisasi'] = $this->importPaguRealisasi($paguRealAkunFile);
         } else {
             // Fallback ke format lama (2 file terpisah)
             $paguFile = $this->findLatestFile($folder, 'inquiry_data_pagu_dan_blokir_2026_*.csv');
@@ -35,6 +55,10 @@ class SintesaImportService
             if ($belanjaFile) {
                 $results['belanja'] = $this->importBelanjaKewilayahan($belanjaFile);
             }
+        }
+
+        if ($paguRealOutputFile) {
+            $results['penanganan_bencana'] = $this->importBencanaFromOutputCsv($paguRealOutputFile);
         }
 
         // 2. Scan file Tematik dari Inquiry Data Tematik (Prioritas Presiden, Program Strategis, Bantuan Pemerintah)
@@ -1702,6 +1726,160 @@ class SintesaImportService
             'persen_realisasi' => $persenRealisasi,
             'kppn_count' => count($kppnRanking),
             'satker_count' => $kpiData['total_satker_count'],
+        ];
+    }
+
+    /**
+     * Ekstrak & simpan data Tematik Penanganan Bencana dari CSV Pagu Realisasi level Output/KRO
+     */
+    public function importBencanaFromOutputCsv(string $filePath): array
+    {
+        $handle = fopen($filePath, 'r');
+        if (!$handle) return ['status' => 'error', 'message' => 'Gagal membuka file Output/KRO Bencana'];
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return ['status' => 'error', 'message' => 'Header CSV Bencana kosong'];
+        }
+        $idx = array_flip(array_map(fn($c) => strtolower(trim((string) $c)), $header));
+
+        $rawItems = [];
+        $outGroups = [];
+        $satkerSet = [];
+        $totalPagu = 0;
+        $totalReal = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < count($header)) continue;
+
+            $kanwilKode = trim($row[$idx['kanwil_kode'] ?? -1] ?? '');
+            if ($kanwilKode !== '01') continue;
+
+            $klKode = trim($row[$idx['kementerian_kode'] ?? -1] ?? '');
+            $klUraian = trim($row[$idx['kementerian_uraian'] ?? -1] ?? '');
+            $kabUraian = trim($row[$idx['kabkota_uraian'] ?? -1] ?? 'ACEH');
+            $satKode = trim($row[$idx['satker_kode'] ?? -1] ?? '');
+            $satUraian = trim($row[$idx['satker_uraian'] ?? -1] ?? '');
+            $progKode = trim($row[$idx['program_kode'] ?? -1] ?? '');
+            $progUraian = trim($row[$idx['program_uraian'] ?? -1] ?? '');
+            $giatKode = trim($row[$idx['kegiatan_kode'] ?? -1] ?? '');
+            $giatUraian = trim($row[$idx['kegiatan_uraian'] ?? -1] ?? '');
+            $outKode = trim($row[$idx['outputkro_kode'] ?? -1] ?? '');
+            $outUraian = trim($row[$idx['outputkro_uraian'] ?? -1] ?? '');
+
+            $hay = strtoupper("{$giatUraian} | {$outUraian}");
+            $isCoreBencana = ($klKode === '107' && !in_array($outKode, ['EBA', 'EBB'], true))
+                || ($giatKode === '7695')
+                || in_array($outKode, ['BHC', 'CBH'], true)
+                || preg_match('/PENANGGULANGAN DARURAT|PENGENDALIAN BENCANA|PENANGANAN BENCANA|PENCARIAN DAN PERTOLONGAN/', $hay);
+
+            if (!$isCoreBencana) continue;
+
+            $pagu = (int) round((float) ($row[$idx['pagu_dipa'] ?? -1] ?? 0));
+            $real = (int) round((float) ($row[$idx['realisasi'] ?? -1] ?? 0));
+            $blokir = (int) round((float) ($row[$idx['blokir'] ?? -1] ?? 0));
+            $pct = $pagu > 0 ? round(($real / $pagu) * 100, 2) : 0.0;
+
+            $totalPagu += $pagu;
+            $totalReal += $real;
+            $satkerSet[$satKode] = true;
+
+            $rawItems[] = [
+                'kode_satker' => $satKode,
+                'nama_satker' => $satUraian,
+                'kl' => $klUraian,
+                'wilayah' => $kabUraian ?: 'ACEH',
+                'kode_out' => $outKode,
+                'kegiatan' => "[{$giatKode}] {$giatUraian}",
+                'output' => "[{$outKode}] {$outUraian}",
+                'program' => "[{$progKode}] {$progUraian}",
+                'pagu' => $pagu,
+                'realisasi' => $real,
+                'blokir' => $blokir,
+                'pct' => $pct,
+            ];
+
+            $outKey = $outKode . '|' . $outUraian;
+            if (!isset($outGroups[$outKey])) {
+                $outGroups[$outKey] = [
+                    'tag' => $outKode,
+                    'uraian' => $outUraian,
+                    'pagu' => 0,
+                    'realisasi' => 0,
+                ];
+            }
+            $outGroups[$outKey]['pagu'] += $pagu;
+            $outGroups[$outKey]['realisasi'] += $real;
+        }
+        fclose($handle);
+
+        usort($rawItems, fn($a, $b) => $b['pagu'] <=> $a['pagu']);
+        foreach ($rawItems as $i => &$it) {
+            $it['no'] = $i + 1;
+        }
+        unset($it);
+
+        // Hitung jumlah uraian unik per kode output untuk pembeda suffix jika kode muncul > 1 uraian
+        $tagCounts = [];
+        foreach ($outGroups as $og) {
+            $tagCounts[$og['tag']] = ($tagCounts[$og['tag']] ?? 0) + 1;
+        }
+        $tagSeen = [];
+        $outputs = [];
+        foreach ($outGroups as $og) {
+            $tag = $og['tag'];
+            $tagSeen[$tag] = ($tagSeen[$tag] ?? 0) + 1;
+            $kode = ($tagCounts[$tag] > 1) ? ($tag . '-' . $tagSeen[$tag]) : $tag;
+            $pctOut = $og['pagu'] > 0 ? round(($og['realisasi'] / $og['pagu']) * 100, 2) : 0.0;
+            $outputs[] = [
+                'kode' => $kode,
+                'tag' => $tag,
+                'nama' => "[{$tag}] {$og['uraian']}",
+                'label' => $og['uraian'],
+                'pagu' => $og['pagu'],
+                'realisasi' => $og['realisasi'],
+                'persen' => $pctOut,
+            ];
+        }
+        usort($outputs, fn($a, $b) => $b['pagu'] <=> $a['pagu']);
+
+        $sisaPagu = max(0, $totalPagu - $totalReal);
+        $persenReal = $totalPagu > 0 ? round(($totalReal / $totalPagu) * 100, 2) : 0.0;
+        $persenSisa = $totalPagu > 0 ? round(max(0, 100 - $persenReal), 2) : 0.0;
+
+        $summary = [
+            'total_pagu' => $totalPagu,
+            'total_pagu_formatted' => 'Rp ' . number_format($totalPagu, 0, ',', '.'),
+            'total_pagu_short' => $totalPagu >= 1e12 ? (number_format($totalPagu / 1e12, 2, ',', '.') . ' T') : (number_format($totalPagu / 1e9, 1, ',', '.') . ' M'),
+            'total_realisasi' => $totalReal,
+            'total_realisasi_formatted' => 'Rp ' . number_format($totalReal, 0, ',', '.'),
+            'sisa_pagu' => $sisaPagu,
+            'sisa_pagu_formatted' => 'Rp ' . number_format($sisaPagu, 0, ',', '.'),
+            'sisa_pagu_short' => 'Rp ' . number_format($sisaPagu / 1e9, 2, ',', '.') . ' M',
+            'persen_realisasi' => $persenReal,
+            'persen_sisa' => $persenSisa,
+            'total_satker' => count($satkerSet),
+            'total_output' => count($outputs),
+            'total_rows' => count($rawItems),
+            'has_rkkl' => false,
+            'rkkl_satker' => 0,
+            'rkkl_output' => 0,
+            'rkkl_pagu_short' => '-',
+        ];
+
+        $this->saveSummary('bencana_summary', $summary);
+        $this->saveSummary('bencana_outputs', $outputs);
+        $this->saveSummary('bencana_items', $rawItems);
+        $this->logSync(basename($filePath), 'PENANGANAN_BENCANA', count($rawItems));
+
+        return [
+            'rows' => count($rawItems),
+            'satkers' => count($satkerSet),
+            'outputs' => count($outputs),
+            'total_pagu' => $totalPagu,
+            'total_realisasi' => $totalReal,
+            'file' => basename($filePath),
         ];
     }
 

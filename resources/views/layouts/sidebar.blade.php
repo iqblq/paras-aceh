@@ -56,6 +56,7 @@
         $sbSatkerCount = count($sbSvc->getSummary('satker_master') ?? []) ?: 789;
         $sbPrioCount = count($sbSvc->getSummary('tematik_prioritas_items') ?? []) ?: 38;
         $sbStratCount = count($sbSvc->getSummary('program_strategis_items') ?? []) ?: 90;
+        $sbBencanaCount = count($sbSvc->getSummary('bencana_items') ?? []) ?: 22;
         $sbJalanCount = count($sbSvc->getSummary('jalan_items') ?? []) ?: 8;
         $sbBansosCount = count($sbSvc->getSummary('bansos_items') ?? []) ?: 207;
       @endphp
@@ -85,7 +86,14 @@
         <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.strategis') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbStratCount }}</span>
       </a>
 
-      <!-- Tab 5: Preservasi Jalan -->
+      <!-- Tab 5: Penanganan Bencana -->
+      <a href="{{ route('tematik.bencana') }}" 
+         class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.bencana') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
+        <span>Penanganan Bencana</span>
+        <span class="text-xs font-mono font-black px-2 py-0.5 rounded-md {{ request()->routeIs('tematik.bencana') ? 'bg-white/20 text-white' : 'bg-slate-800/90 text-slate-300 border border-slate-700/70' }}">{{ $sbBencanaCount }}</span>
+      </a>
+
+      <!-- Tab 6: Preservasi Jalan -->
       <a href="{{ route('tematik.jalan') }}" 
          class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all {{ request()->routeIs('tematik.jalan') ? 'bg-[#1e40af] text-white shadow-md shadow-blue-950/50' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}">
         <span>Preservasi Jalan</span>

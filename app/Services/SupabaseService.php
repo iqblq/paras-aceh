@@ -1372,6 +1372,10 @@ class SupabaseService
 
     public function getBencanaSummary(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bencana_summary');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             'total_pagu' => 1346348051000,
             'total_pagu_formatted' => 'Rp 1.346.348.051.000',
@@ -1395,6 +1399,10 @@ class SupabaseService
 
     public function getBencanaOutputs(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bencana_outputs');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             ['kode' => 'BHC-1', 'tag' => 'BHC', 'nama' => '[BHC] Operasi Bidang Penanggulangan Bencana', 'label' => 'Operasi Penanggulangan Bencana', 'pagu' => 520450000000, 'realisasi' => 426769000000, 'persen' => 82.00],
             ['kode' => 'CBH', 'tag' => 'CBH', 'nama' => '[CBH] Prasarana Bidang Pengendalian Bencana', 'label' => 'Prasarana Pengendalian Bencana', 'pagu' => 468200000000, 'realisasi' => 98322000000, 'persen' => 21.00],
@@ -1420,6 +1428,10 @@ class SupabaseService
 
     public function getBencanaData(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('bencana_items');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             ['no' => 1, 'kode_satker' => '614794', 'nama_satker' => 'KANTOR PENCARIAN DAN PERTOLONGAN BANDA ACEH', 'kl' => 'BADAN SAR NASIONAL', 'wilayah' => 'KOTA BANDA ACEH', 'kode_out' => 'RCM', 'kegiatan' => '[3946] Pengelolaan Sarana dan Prasarana SAR', 'output' => '[RCM] OM Sarana Bidang Pencarian, Pertolongan, dan Penanganan Bencana', 'program' => '[BM] Program Pencarian dan Pertolongan pada Kecelakaan dan Bencana', 'pagu' => 4079494000, 'realisasi' => 3278739856, 'pct' => 80.37],
             ['no' => 2, 'kode_satker' => '614794', 'nama_satker' => 'KANTOR PENCARIAN DAN PERTOLONGAN BANDA ACEH', 'kl' => 'BADAN SAR NASIONAL', 'wilayah' => 'KOTA BANDA ACEH', 'kode_out' => 'RDH', 'kegiatan' => '[3946] Pengelolaan Sarana dan Prasarana SAR', 'output' => '[RDH] OM Prasarana Bidang Pencarian, Pertolongan, dan Penanganan Bencana', 'program' => '[BM] Program Pencarian dan Pertolongan pada Kecelakaan dan Bencana', 'pagu' => 60000000, 'realisasi' => 60000000, 'pct' => 100.00],

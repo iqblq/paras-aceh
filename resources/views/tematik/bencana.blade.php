@@ -23,9 +23,11 @@
       <div class="flex flex-wrap items-center sm:justify-end gap-1.5">
         <h1 class="text-sm sm:text-lg font-black text-slate-900 tracking-tight">Penanganan Bencana</h1>
         <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">{{ $summary['total_rows'] }} Output</span>
-        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">{{ $summary['rkkl_satker'] }} Satker RKA-K/L</span>
+        @if(!empty($summary['has_rkkl']))
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">{{ $summary['rkkl_satker'] }} Satker RKA-K/L</span>
+        @endif
       </div>
-      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono mt-0.5">T.A. 2026 · Tanggap Darurat, SAR, Pengendalian Banjir & Pemulihan Infrastruktur</p>
+      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono mt-0.5">T.A. 2026 · {{ $summary['total_satker'] }} Satker · Tanggap Darurat, SAR &amp; Pengendalian Banjir</p>
     </div>
   </div>
 
@@ -44,7 +46,7 @@
         </div>
       </div>
       <div class="text-[11px] text-slate-400 font-medium flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-100">
-        <span>Alokasi Penanganan Bencana (6 Satker)</span>
+        <span>Alokasi Penanganan Bencana ({{ $summary['total_satker'] }} Satker)</span>
         <span class="font-bold text-blue-600 font-mono">100%</span>
       </div>
     </div>
@@ -96,22 +98,24 @@
 
   </div>
 
-  <!-- 3. EXECUTIVE 2-TAB NAVIGATION BAR (REALISASI OUTPUT vs RKA-K/L BENCANA) -->
-  <div class="bg-white rounded-2xl border border-slate-200/90 p-1.5 shadow-xs flex flex-col sm:flex-row gap-1.5">
-    <button type="button" id="tabBtnRealisasi" onclick="switchBencanaTab('realisasi')"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow-sm transition-all">
-      <span>🚨 Realisasi Output Penanganan Bencana</span>
-      <span class="px-2 py-0.5 rounded-full bg-white/20 font-mono text-[10px]">6 Satker · Rp 1,3 T</span>
-    </button>
-    <button type="button" id="tabBtnRkkl" onclick="switchBencanaTab('rkkl')"
-            class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all">
-      <span>📑 Resume & Rincian Item RKA-K/L Bencana</span>
-      <span class="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-[10px]">47 Satker · Rp 10,6 T</span>
-    </button>
-  </div>
+  @if(!empty($summary['has_rkkl']))
+    <!-- 3. EXECUTIVE 2-TAB NAVIGATION BAR (REALISASI OUTPUT vs RKA-K/L BENCANA) -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 p-1.5 shadow-xs flex flex-col sm:flex-row gap-1.5">
+      <button type="button" id="tabBtnRealisasi" onclick="switchBencanaTab('realisasi')"
+              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow-sm transition-all">
+        <span>🚨 Realisasi Output Penanganan Bencana</span>
+        <span class="px-2 py-0.5 rounded-full bg-white/20 font-mono text-[10px]">{{ $summary['total_satker'] }} Satker · Rp {{ $summary['total_pagu_short'] }}</span>
+      </button>
+      <button type="button" id="tabBtnRkkl" onclick="switchBencanaTab('rkkl')"
+              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all">
+        <span>📑 Resume & Rincian Item RKA-K/L Bencana</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-[10px]">{{ $summary['rkkl_satker'] }} Satker · Rp {{ $summary['rkkl_pagu_short'] }}</span>
+      </button>
+    </div>
+  @endif
 
   <!-- ========================================================================= -->
-  <!-- TAB PANEL 1: REALISASI OUTPUT PENANGANAN BENCANA (6 SATKER · 19 OUTPUT)   -->
+  <!-- TAB PANEL 1: REALISASI OUTPUT PENANGANAN BENCANA                          -->
   <!-- ========================================================================= -->
   <div id="panelBencanaRealisasi" class="space-y-5 sm:space-y-6">
 
@@ -130,7 +134,7 @@
               <span class="text-2xl sm:text-3xl font-black text-blue-700 font-mono">{{ $summary['total_satker'] }}</span>
               <span class="text-xs font-bold text-slate-500">Satker</span>
             </div>
-            <span class="text-[10px] text-slate-400 mt-1 block">BASARNAS, BWS I, BPJN, Pengairan, Cipta Karya, Dinsos</span>
+            <span class="text-[10px] text-slate-400 mt-1 block">Data SINTESA Output/KRO Kanwil DJPb Aceh</span>
           </div>
           <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,20 +186,20 @@
             <span>Pagu & Realisasi per Output Penanganan Bencana</span>
           </h2>
           <p class="text-[11px] text-slate-400 mt-0.5">
-            💡 Klik batang grafik output untuk menyaring tabel 22 kegiatan penanganan bencana di bawah
+            💡 Klik batang grafik output untuk menyaring tabel {{ count($items) }} rincian penanganan bencana di bawah
           </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <!-- Toggle Top 10 vs Semua 19 Output -->
+          <!-- Toggle Top 10 vs Semua Output -->
           <div class="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
             <button type="button" id="btnBencTop10" onclick="switchBencanaLimit(10)"
                     class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-800 shadow-2xs transition-all">
               Top 10
             </button>
-            <button type="button" id="btnBencAll19" onclick="switchBencanaLimit(19)"
+            <button type="button" id="btnBencAll19" onclick="switchBencanaLimit({{ count($outputs) }})"
                     class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-all">
-              Semua (19)
+              Semua ({{ count($outputs) }})
             </button>
           </div>
 
@@ -214,17 +218,28 @@
       </div>
 
       <!-- Insight Strip -->
+      @php
+        $bencTopPct = collect($outputs)->sortByDesc('persen')->first();
+        $bencTopPagu = collect($outputs)->sortByDesc('pagu')->first();
+        $bencLowPct = collect($outputs)->sortBy('persen')->first();
+      @endphp
       <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
         <div class="flex flex-wrap items-center gap-2">
+          @if($bencTopPct)
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-            🏆 Tertinggi: [RDH] Pos SAR (100%) & [CDR] Pengairan (99,83%)
+            🏆 Tertinggi: [{{ $bencTopPct['tag'] }}] {{ \Illuminate\Support\Str::limit($bencTopPct['label'], 26) }} ({{ number_format($bencTopPct['persen'], 2, ',', '.') }}%)
           </span>
+          @endif
+          @if($bencTopPagu)
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-            📌 Pagu Terbesar: [BHC] Operasi Bencana (Rp 520,4 M)
+            📌 Pagu Terbesar: [{{ $bencTopPagu['tag'] }}] {{ \Illuminate\Support\Str::limit($bencTopPagu['label'], 24) }} (Rp {{ number_format($bencTopPagu['pagu'] / 1e9, 1, ',', '.') }} M)
           </span>
+          @endif
+          @if($bencLowPct)
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-bold">
-            ⚡ Perlu Akselerasi: [CBH] Pengendalian Bencana (21,00%)
+            ⚡ Perlu Akselerasi: [{{ $bencLowPct['tag'] }}] {{ \Illuminate\Support\Str::limit($bencLowPct['label'], 24) }} ({{ number_format($bencLowPct['persen'], 2, ',', '.') }}%)
           </span>
+          @endif
         </div>
         <div id="bencChartLegend" class="flex items-center gap-3 font-semibold text-slate-500">
           <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-sky-300"></span> Pagu DIPA</span>
@@ -238,7 +253,7 @@
       </div>
     </div>
 
-    <!-- Interactive Table: 22 Output Penanganan Bencana -->
+    <!-- Interactive Table: Rincian Output Penanganan Bencana -->
     <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
       <div class="p-3.5 sm:p-4 border-b border-slate-200/80 bg-slate-50/70 space-y-3">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -252,7 +267,7 @@
 
           <div class="flex items-center gap-1.5 text-xs overflow-x-auto pb-1 lg:pb-0 no-scrollbar sm:flex-wrap">
             <button onclick="resetBencanaFilters()" id="btnBencFilterAll" class="shrink-0 benc-filter-btn px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold shadow-xs transition-all border border-rose-600">
-              Semua (22)
+              Semua ({{ count($items) }})
             </button>
             <button onclick="filterBencanaStatus('tinggi', this)" class="shrink-0 benc-filter-btn px-3 py-1.5 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg font-semibold transition-all border border-slate-200">
               Serapan &ge; 80%
@@ -273,14 +288,10 @@
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px]">
           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Filter Satker:</span>
           @php
-            $satkerPills = [
-              ['kode' => '614794', 'nama' => 'BASARNAS Banda Aceh (7)'],
-              ['kode' => '694269', 'nama' => 'BWS Sumatera I (7)'],
-              ['kode' => '694081', 'nama' => 'Dinas Pengairan Aceh (3)'],
-              ['kode' => '498551', 'nama' => 'PJN Wilayah I Aceh (2)'],
-              ['kode' => '690510', 'nama' => 'Dinsos Aceh (2)'],
-              ['kode' => '694003', 'nama' => 'BPBPK Cipta Karya Aceh (1)'],
-            ];
+            $satkerPills = collect($items)->groupBy('kode_satker')->map(function ($rows, $kode) {
+              $first = $rows->first();
+              return ['kode' => $kode, 'nama' => \Illuminate\Support\Str::limit($first['nama_satker'], 32) . ' (' . $rows->count() . ')'];
+            })->values();
           @endphp
           @foreach ($satkerPills as $sp)
             <button onclick="filterBencanaBySatker('{{ $sp['kode'] }}', this)"
@@ -388,15 +399,16 @@
       </div>
 
       <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span id="bencanaCountInfo">Menampilkan <strong class="text-slate-800">22</strong> dari 22 output Penanganan Bencana</span>
+        <span id="bencanaCountInfo">Menampilkan <strong class="text-slate-800">{{ count($items) }}</strong> dari {{ count($items) }} output Penanganan Bencana</span>
         <span class="font-mono text-[10px] text-slate-400">Klik baris untuk detail output · Kanwil DJPb Provinsi Aceh</span>
       </div>
     </div>
 
   </div>
 
+  @if(!empty($summary['has_rkkl']))
   <!-- ========================================================================= -->
-  <!-- TAB PANEL 2: RESUME & RINCIAN ITEM RKA-K/L PENANGANAN BENCANA (10,6 T)    -->
+  <!-- TAB PANEL 2: RESUME & RINCIAN ITEM RKA-K/L PENANGANAN BENCANA             -->
   <!-- ========================================================================= -->
   <div id="panelBencanaRkkl" class="hidden space-y-5 sm:space-y-6">
 
@@ -516,12 +528,13 @@
       </div>
 
       <div class="px-4 py-3 bg-slate-50/70 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span id="rkklCountInfo">Menampilkan <strong class="text-slate-800">{{ count($rkklItems) }}</strong> sampel item RKA-K/L utama (dari total 47 Satker · Rp 10,6 T)</span>
+        <span id="rkklCountInfo">Menampilkan <strong class="text-slate-800">{{ count($rkklItems) }}</strong> sampel item RKA-K/L utama</span>
         <span class="font-mono text-[10px] text-slate-400">Tagging Tematik Bencana RKA-K/L · Kanwil DJPb Provinsi Aceh</span>
       </div>
     </div>
 
   </div>
+  @endif
 
   <!-- 4. MODAL DETAIL OUTPUT PENANGANAN BENCANA (MODERN INSPECTOR) -->
   <div id="bencanaDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
@@ -939,7 +952,7 @@
     });
 
     const info = document.getElementById('bencanaCountInfo');
-    if (info) info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari 22 output Penanganan Bencana`;
+    if (info) info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari ${rows.length} output Penanganan Bencana`;
   }
 
   function filterBencanaByTag(tag, label) {

@@ -25,12 +25,58 @@
     <!-- Title Kanan -->
     <div class="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
       <h1 class="text-sm sm:text-lg font-black text-slate-900 tracking-tight">Executive Dashboard Perbendaharaan</h1>
-      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono">Monitoring Komprehensif {{ count($kppnRanking['details'] ?? []) ?: 7 }} KPPN Lingkup Kanwil DJPb Provinsi Aceh ({{ $kpi['total_satker_count'] ?? 768 }} Satker K/L)</p>
+      <p class="text-[10px] sm:text-[11px] text-slate-500 font-mono">Konsolidasi {{ count($regionalMatrix['kppns'] ?? []) ?: 7 }} KPPN Se-Aceh (Banda Aceh + 6 KPPN Daerah · {{ $regionalMatrix['ALL']['all']['satker_count'] ?? 789 }} Satker K/L &amp; BA BUN)</p>
     </div>
   </div>
 
+  @php
+    $heroInit = $regionalMatrix['ALL']['all'] ?? [
+      'pagu_formatted' => $kpi['total_pagu_formatted'],
+      'realisasi_formatted' => $kpi['total_realisasi_formatted'],
+      'sisa_formatted' => $kpi['sisa_pagu_formatted'],
+      'blokir_formatted' => $kpi['total_blokir_formatted'],
+      'persen_realisasi' => $kpi['persen_realisasi'],
+      'persen_realisasi_formatted' => number_format($kpi['persen_realisasi'], 2, ',', '.') . '%',
+      'persen_sisa' => $kpi['persen_sisa'],
+      'persen_sisa_formatted' => number_format($kpi['persen_sisa'], 2, ',', '.') . '%',
+      'persen_blokir' => $kpi['persen_blokir'],
+      'satker_count' => $kpi['total_satker_count'] ?? 789,
+    ];
+    $heroKlInit = $regionalMatrix['ALL']['kl'] ?? $heroInit;
+    $heroBunInit = $regionalMatrix['ALL']['bun'] ?? $heroInit;
+  @endphp
+
   <!-- SECTION 1: HERO EXECUTIVE APBN BAR (MIDNIGHT TREASURY NAVY) -->
   <div class="w-full bg-gradient-to-br from-[#0b132b] via-[#1c2541] to-[#0f172a] border border-slate-700/80 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xl relative overflow-hidden transition-all duration-300">
+
+    <!-- Top Controls: Scope (Semua APBN / K/L / BA BUN) + Filter 7 KPPN -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pb-3.5 mb-4 border-b border-slate-700/70">
+      <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/70 border border-slate-700/80 rounded-xl p-1">
+        <button type="button" id="btnHeroScopeAll" onclick="setHeroScope('all')"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-blue-600 text-white shadow-xs transition-all">
+          Semua APBN (K/L + TKD) · {{ $heroInit['satker_count'] }} Satker
+        </button>
+        <button type="button" id="btnHeroScopeKl" onclick="setHeroScope('kl')"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+          Belanja K/L ({{ $heroKlInit['satker_count'] }})
+        </button>
+        <button type="button" id="btnHeroScopeBun" onclick="setHeroScope('bun')"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all">
+          BA BUN / TKD ({{ $heroBunInit['satker_count'] }})
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] text-slate-400 font-semibold hidden sm:inline">Wilayah KPPN:</span>
+        <select id="heroKppnSelect" onchange="setHeroRegion(this.value)"
+                class="bg-slate-900/90 border border-slate-600/80 text-white text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+          <option value="ALL">Semua 7 KPPN Se-Aceh (Konsolidasi)</option>
+          @foreach(($regionalMatrix['kppns'] ?? []) as $kKey => $kItem)
+            <option value="{{ $kKey }}">{{ $kItem['nama'] }} ({{ $kItem['all']['satker_count'] }} Satker)</option>
+          @endforeach
+        </select>
+      </div>
+    </div>
     
     <!-- Top Row: Total Pagu on Left, Realisasi & Sisa Pagu Cards on Right -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
@@ -38,11 +84,14 @@
       <!-- Left: Total Pagu -->
       <div>
         <div class="flex items-center gap-1.5 text-slate-300 text-xs sm:text-sm font-medium mb-1">
-          <span class="tracking-wide uppercase text-[11px] font-bold text-slate-400">PAGU REALISASI SATKER K/L · Total Pagu DIPA</span>
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-500 text-[10px] font-serif cursor-help text-slate-400" title="Total Alokasi Pagu DIPA Satker Kementerian/Lembaga Kanwil DJPb Provinsi Aceh">ⓘ</span>
+          <span id="heroScopeTitle" class="tracking-wide uppercase text-[11px] font-bold text-slate-300">KONSOLIDASI APBN ACEH (K/L + BA BUN · 7 KPPN) · Total Pagu DIPA</span>
+          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-slate-500 text-[10px] font-serif cursor-help text-slate-400" title="Total Pagu DIPA gabungan Satker K/L dan Satker Penyalur TKD (BA BUN) seluruh 7 KPPN se-Aceh">ⓘ</span>
         </div>
         <div id="heroTotalPagu" class="text-xl sm:text-3xl lg:text-4xl font-black text-white font-mono tracking-tight break-all sm:break-normal">
-          {{ $kpi['total_pagu_formatted'] }}
+          {{ $heroInit['pagu_formatted'] }}
+        </div>
+        <div id="heroSubSummary" class="text-[11px] text-slate-400 font-mono mt-1">
+          Belanja K/L: {{ $heroKlInit['pagu_formatted'] }} + BA BUN/TKD: {{ $heroBunInit['pagu_formatted'] }}
         </div>
       </div>
 
@@ -55,7 +104,7 @@
             Realisasi Belanja
           </div>
           <div id="heroRealVal" class="text-left sm:text-right text-base sm:text-lg lg:text-xl font-black text-white font-mono tracking-tight whitespace-nowrap">
-            {{ $kpi['total_realisasi_formatted'] }}
+            {{ $heroInit['realisasi_formatted'] }}
           </div>
         </div>
 
@@ -65,7 +114,7 @@
             Sisa Pagu
           </div>
           <div id="heroSisaVal" class="text-left sm:text-right text-base sm:text-lg lg:text-xl font-black text-amber-300 font-mono tracking-tight whitespace-nowrap">
-            {{ $kpi['sisa_pagu_formatted'] }}
+            {{ $heroInit['sisa_formatted'] }}
           </div>
         </div>
 
@@ -76,12 +125,12 @@
     <!-- Middle Row: Percentage Headers -->
     <div class="flex items-center justify-between text-xs sm:text-sm font-medium mb-1.5 px-0.5">
       <div class="flex items-center gap-1.5">
-        <span class="text-slate-300">Total Realisasi Belanja</span>
-        <span id="heroRealPctText" class="text-sm sm:text-lg font-black text-blue-400 font-mono ml-1">{{ number_format($kpi['persen_realisasi'], 2, ',', '.') }}%</span>
+        <span class="text-slate-300">Total Realisasi</span>
+        <span id="heroRealPctText" class="text-sm sm:text-lg font-black text-blue-400 font-mono ml-1">{{ $heroInit['persen_realisasi_formatted'] }}</span>
       </div>
       <div class="flex items-center gap-1.5">
         <span class="text-slate-300">Sisa Pagu</span>
-        <span id="heroSisaPctText" class="text-sm sm:text-lg font-black text-amber-400 font-mono ml-1">{{ number_format($kpi['persen_sisa'], 2, ',', '.') }}%</span>
+        <span id="heroSisaPctText" class="text-sm sm:text-lg font-black text-amber-400 font-mono ml-1">{{ $heroInit['persen_sisa_formatted'] }}</span>
       </div>
     </div>
 
@@ -90,13 +139,13 @@
       <!-- Realisasi Segment (Treasury Deep Blue) -->
       <div id="heroBarReal" 
            class="bg-blue-600 rounded-l-lg h-full flex items-center justify-end pr-2.5 sm:pr-3 text-white text-xs sm:text-sm font-black transition-all duration-700" 
-           style="width: {{ $kpi['persen_realisasi'] }}%;">
-        <span id="heroBarRealLabel">{{ number_format($kpi['persen_realisasi'], 2, ',', '.') }}%</span>
+           style="width: {{ $heroInit['persen_realisasi'] }}%;">
+        <span id="heroBarRealLabel">{{ $heroInit['persen_realisasi_formatted'] }}</span>
       </div>
       <!-- Sisa Segment (Treasury Warm Gold) -->
       <div id="heroBarSisa" 
            class="bg-amber-500/80 rounded-r-lg h-full transition-all duration-700" 
-           style="width: {{ $kpi['persen_sisa'] }}%;">
+           style="width: {{ $heroInit['persen_sisa'] }}%;">
       </div>
     </div>
 
@@ -112,11 +161,11 @@
         </div>
         <div class="flex items-baseline gap-1.5 flex-wrap">
           <span class="text-slate-300">Pagu Blokir</span>
-          <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-slate-500 text-[9px] font-serif cursor-help text-slate-400" title="Total Pagu DIPA Satker K/L berstatus blokir">ⓘ</span>
+          <span class="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-slate-500 text-[9px] font-serif cursor-help text-slate-400" title="Total Pagu DIPA berstatus blokir">ⓘ</span>
           <span id="heroCutoffVal" class="font-black text-rose-300 font-mono text-xs sm:text-sm">
-            {{ $kpi['total_blokir_formatted'] }}
+            {{ $heroInit['blokir_formatted'] }}
           </span>
-          <span class="text-[10px] font-mono text-rose-400/90">({{ number_format($kpi['persen_blokir'], 2, ',', '.') }}%)</span>
+          <span id="heroBlokirPct" class="text-[10px] font-mono text-rose-400/90">({{ number_format($heroInit['persen_blokir'], 2, ',', '.') }}%)</span>
         </div>
       </div>
 
@@ -138,6 +187,17 @@
       </div>
       <div class="flex flex-wrap items-center gap-2 sm:gap-3">
         <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <button id="btnKppnScopeAll" onclick="switchKppnScope('all')" class="px-2.5 py-1 rounded-md font-bold bg-blue-600 text-white shadow-2xs transition-all">
+            Gabungan (K/L + TKD)
+          </button>
+          <button id="btnKppnScopeKl" onclick="switchKppnScope('kl')" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition-all">
+            K/L Saja
+          </button>
+          <button id="btnKppnScopeBun" onclick="switchKppnScope('bun')" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition-all">
+            TKD / BA BUN
+          </button>
+        </div>
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
           <button id="btnKppnPct" onclick="switchKppnView('percent')" class="px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all">
             Persentase &amp; Nominal
           </button>
@@ -145,7 +205,7 @@
             Batang Nominal (T)
           </button>
         </div>
-        <span class="text-[11px] text-slate-400 font-mono hidden md:inline">Realisasi / Pagu DIPA K/L</span>
+        <span id="labelKppnSub" class="text-[11px] text-slate-400 font-mono hidden md:inline">Realisasi / Pagu APBN (K/L + TKD)</span>
       </div>
     </div>
 
@@ -163,35 +223,38 @@
         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Highlight Capaian Regional</div>
         
         @php
-          $topKppn = $kppnRanking['details'][0] ?? ['nama' => 'Kutacane', 'persentase_formatted' => '86,97%', 'realisasi' => 308199457445, 'pagu' => 354357433000];
-          $porsiKppn = collect($kppnRanking['details'] ?? [])->sortByDesc('pagu')->first() ?? ['nama' => 'Banda Aceh', 'pagu' => 27364991464000, 'realisasi' => 16340375248432, 'persentase_formatted' => '59,71%'];
-          $cleanNamaTop = ucwords(strtolower(str_replace('L A N G S A', 'Langsa', $topKppn['nama'])));
-          $cleanNamaPorsi = ucwords(strtolower(str_replace('L A N G S A', 'Langsa', $porsiKppn['nama'])));
+          $allKppnCards = collect($regionalMatrix['kppns'] ?? [])->map(function ($item) {
+              $b = $item['all'];
+              return array_merge($b, ['nama' => $item['nama']]);
+          });
+          $topKppn = $allKppnCards->sortByDesc('persen_realisasi')->first() ?? ['nama' => 'KPPN Kutacane', 'persen_realisasi_formatted' => '92,43%', 'realisasi' => 0, 'pagu' => 0];
+          $porsiKppn = $allKppnCards->sortByDesc('pagu')->first() ?? ['nama' => 'KPPN Banda Aceh', 'pagu' => 0, 'realisasi' => 0, 'persen_realisasi_formatted' => '72,84%'];
+          $avgAll = $regionalMatrix['ALL']['all'] ?? $heroInit;
         @endphp
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold text-emerald-900">KPPN {{ $cleanNamaTop }}</span>
-              <span class="text-xs font-black text-emerald-700 font-mono">{{ $topKppn['persentase_formatted'] }}</span>
+              <span id="hlTopName" class="text-xs font-extrabold text-emerald-900">{{ $topKppn['nama'] }}</span>
+              <span id="hlTopPct" class="text-xs font-black text-emerald-700 font-mono">{{ $topKppn['persen_realisasi_formatted'] }}</span>
             </div>
-            <p class="text-[11px] text-emerald-700">Peringkat 1 serapan tertinggi (Real: Rp {{ number_format(($topKppn['realisasi'] ?? 0) / 1e9, 1, ',', '.') }} M / Pagu: Rp {{ number_format(($topKppn['pagu'] ?? 0) / 1e9, 1, ',', '.') }} M).</p>
+            <p id="hlTopDesc" class="text-[11px] text-emerald-700">Peringkat 1 serapan tertinggi (Real: Rp {{ number_format(($topKppn['realisasi'] ?? 0) / 1e12, 2, ',', '.') }} T / Pagu: Rp {{ number_format(($topKppn['pagu'] ?? 0) / 1e12, 2, ',', '.') }} T).</p>
           </div>
 
           <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold text-blue-900">Rata-rata Regional Aceh</span>
-              <span class="text-xs font-black text-blue-700 font-mono">{{ number_format($kpi['persen_realisasi'], 2, ',', '.') }}%</span>
+              <span id="hlAvgTitle" class="text-xs font-extrabold text-blue-900">Rata-rata Regional Aceh (K/L + TKD)</span>
+              <span id="hlAvgPct" class="text-xs font-black text-blue-700 font-mono">{{ $avgAll['persen_realisasi_formatted'] }}</span>
             </div>
-            <p class="text-[11px] text-blue-700">Capaian realisasi Satker K/L: {{ $kpi['total_realisasi_formatted'] }} dari {{ $kpi['total_pagu_formatted'] }}.</p>
+            <p id="hlAvgDesc" class="text-[11px] text-blue-700">Total Realisasi Se-Aceh: {{ $avgAll['realisasi_formatted'] }} dari {{ $avgAll['pagu_formatted'] }}.</p>
           </div>
 
           <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold text-slate-800">KPPN {{ $cleanNamaPorsi }}</span>
-              <span class="text-xs font-black text-slate-900 font-mono">{{ $porsiKppn['persentase_formatted'] }}</span>
+              <span id="hlMaxName" class="text-xs font-extrabold text-slate-800">{{ $porsiKppn['nama'] }}</span>
+              <span id="hlMaxPct" class="text-xs font-black text-slate-900 font-mono">{{ $porsiKppn['persen_realisasi_formatted'] }}</span>
             </div>
-            <p class="text-[11px] text-slate-500">Pagu DIPA terbesar: Rp {{ number_format(($porsiKppn['pagu'] ?? 0) / 1e12, 2, ',', '.') }} T (Real: Rp {{ number_format(($porsiKppn['realisasi'] ?? 0) / 1e12, 2, ',', '.') }} T).</p>
+            <p id="hlMaxDesc" class="text-[11px] text-slate-500">Pagu DIPA terbesar: Rp {{ number_format(($porsiKppn['pagu'] ?? 0) / 1e12, 2, ',', '.') }} T (Real: Rp {{ number_format(($porsiKppn['realisasi'] ?? 0) / 1e12, 2, ',', '.') }} T).</p>
           </div>
         </div>
       </div>
@@ -405,10 +468,69 @@
   Chart.defaults.font.family = '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif';
   Chart.defaults.color = '#475569';
 
-  // 1. CHART RADAR KINERJA 7 KPPN SE-PROVINSI ACEH (PERSENTASE + NOMINAL)
+  // 0. DATA KONSOLIDASI 7 KPPN & HERO EXECUTIVE SWITCHER
+  const regionalMatrix = @json($regionalMatrix);
+  let activeHeroScope = 'all';
+  let activeHeroRegion = 'ALL';
+
+  function updateHeroBar() {
+    const regionObj = activeHeroRegion === 'ALL'
+      ? regionalMatrix.ALL
+      : ((regionalMatrix.kppns || {})[activeHeroRegion] || regionalMatrix.ALL);
+    const data = regionObj[activeHeroScope] || regionObj.all;
+    const klInfo = regionObj.kl || data;
+    const bunInfo = regionObj.bun || data;
+
+    const scopeLabels = {
+      all: `KONSOLIDASI APBN (${regionObj.nama.toUpperCase()} · K/L + BA BUN · ${data.satker_count} SATKER) · Total Pagu DIPA`,
+      kl: `BELANJA SATKER K/L (${regionObj.nama.toUpperCase()} · ${data.satker_count} SATKER) · Total Pagu DIPA`,
+      bun: `TRANSFER KE DAERAH / BA BUN (${regionObj.nama.toUpperCase()} · ${data.satker_count} SATKER) · Total Pagu DIPA`
+    };
+
+    document.getElementById('heroScopeTitle').textContent = scopeLabels[activeHeroScope];
+    document.getElementById('heroTotalPagu').textContent = data.pagu_formatted;
+    document.getElementById('heroRealVal').textContent = data.realisasi_formatted;
+    document.getElementById('heroSisaVal').textContent = data.sisa_formatted;
+    document.getElementById('heroRealPctText').textContent = data.persen_realisasi_formatted;
+    document.getElementById('heroSisaPctText').textContent = data.persen_sisa_formatted;
+    document.getElementById('heroBarReal').style.width = Math.min(data.persen_realisasi, 100) + '%';
+    document.getElementById('heroBarRealLabel').textContent = data.persen_realisasi_formatted;
+    document.getElementById('heroBarSisa').style.width = Math.max(data.persen_sisa, 0) + '%';
+    document.getElementById('heroCutoffVal').textContent = data.blokir_formatted;
+    document.getElementById('heroBlokirPct').textContent = `(${Number(data.persen_blokir || 0).toFixed(2).replace('.', ',')}%)`;
+
+    const subEl = document.getElementById('heroSubSummary');
+    if (subEl) {
+      subEl.textContent = activeHeroScope === 'all'
+        ? `Belanja K/L (${klInfo.satker_count} Satker): ${klInfo.pagu_formatted} + BA BUN/TKD (${bunInfo.satker_count} Satker): ${bunInfo.pagu_formatted}`
+        : `${regionObj.nama} · Realisasi ${data.persen_realisasi_formatted}`;
+    }
+
+    const activeCls = 'px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-blue-600 text-white shadow-xs transition-all';
+    const idleCls = 'px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-all';
+    document.getElementById('btnHeroScopeAll').className = activeHeroScope === 'all' ? activeCls : idleCls;
+    document.getElementById('btnHeroScopeKl').className = activeHeroScope === 'kl' ? activeCls : idleCls;
+    document.getElementById('btnHeroScopeBun').className = activeHeroScope === 'bun' ? activeCls : idleCls;
+  }
+
+  function setHeroScope(scope) {
+    activeHeroScope = scope;
+    updateHeroBar();
+  }
+
+  function setHeroRegion(regionKey) {
+    activeHeroRegion = regionKey;
+    updateHeroBar();
+    if (typeof filterBunWilayah === 'function') {
+      filterBunWilayah(regionKey);
+    }
+  }
+
+  // 1. CHART RADAR KINERJA 7 KPPN SE-PROVINSI ACEH (GABUNGAN K/L+TKD, K/L, BUN)
   let chartRadarKppnInstance = null;
   let currentKppnMode = 'percent';
-  const kppnRankingMaster = @json($kppnRanking);
+  let currentKppnScope = 'all';
+  let activeRadarDetails = [];
 
   function formatShortNom(valRp) {
     if (valRp >= 1e12) return 'Rp ' + (valRp / 1e12).toFixed(2).replace('.', ',') + ' T';
@@ -416,21 +538,58 @@
     return 'Rp ' + Math.round(valRp / 1e6).toLocaleString('id-ID') + ' Jt';
   }
 
+  function buildKppnSeries(scope) {
+    const list = Object.values(regionalMatrix.kppns || {}).map(k => {
+      const b = k[scope] || k.all;
+      return {
+        nama: k.nama,
+        pagu: b.pagu,
+        pagu_formatted: b.pagu_formatted,
+        realisasi: b.realisasi,
+        realisasi_formatted: b.realisasi_formatted,
+        persen: b.persen_realisasi,
+        persentase_formatted: b.persen_realisasi_formatted,
+      };
+    });
+    list.sort((a, b) => b.persen - a.persen);
+    return list;
+  }
+
+  function updateHighlightCards(scope) {
+    const details = buildKppnSeries(scope);
+    if (!details.length) return;
+    const topItem = details[0];
+    const maxPaguItem = [...details].sort((a, b) => b.pagu - a.pagu)[0];
+    const avgBucket = (regionalMatrix.ALL && regionalMatrix.ALL[scope]) ? regionalMatrix.ALL[scope] : regionalMatrix.ALL.all;
+    const scopeTitleMap = { all: 'K/L + TKD', kl: 'Satker K/L', bun: 'BA BUN / TKD' };
+
+    document.getElementById('hlTopName').textContent = topItem.nama;
+    document.getElementById('hlTopPct').textContent = topItem.persentase_formatted;
+    document.getElementById('hlTopDesc').textContent = `Peringkat 1 serapan tertinggi (Real: ${formatShortNom(topItem.realisasi)} / Pagu: ${formatShortNom(topItem.pagu)}).`;
+
+    document.getElementById('hlAvgTitle').textContent = `Rata-rata Regional Aceh (${scopeTitleMap[scope]})`;
+    document.getElementById('hlAvgPct').textContent = avgBucket.persen_realisasi_formatted;
+    document.getElementById('hlAvgDesc').textContent = `Total Realisasi ${scopeTitleMap[scope]}: ${avgBucket.realisasi_formatted} dari ${avgBucket.pagu_formatted}.`;
+
+    document.getElementById('hlMaxName').textContent = maxPaguItem.nama;
+    document.getElementById('hlMaxPct').textContent = maxPaguItem.persentase_formatted;
+    document.getElementById('hlMaxDesc').textContent = `Pagu DIPA terbesar: ${formatShortNom(maxPaguItem.pagu)} (Real: ${formatShortNom(maxPaguItem.realisasi)}).`;
+  }
+
   function initChartRadarKppn() {
     const ctx = document.getElementById('chartRadarKppn');
     if (!ctx) return;
 
-    const cleanLabels = (kppnRankingMaster.labels || []).map(l => l.replace(/L\s+A\s+N\s+G\s+S\s+A/i, 'Langsa'));
-    const details = kppnRankingMaster.details || [];
+    activeRadarDetails = buildKppnSeries(currentKppnScope);
 
     chartRadarKppnInstance = new Chart(ctx.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: cleanLabels,
+        labels: activeRadarDetails.map(d => d.nama),
         datasets: [{
           label: '% Realisasi',
-          data: kppnRankingMaster.persen,
-          backgroundColor: kppnRankingMaster.persen.map(p => p >= 80 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
+          data: activeRadarDetails.map(d => d.persen),
+          backgroundColor: activeRadarDetails.map(d => d.persen >= 85 ? '#10b981' : (d.persen >= 75 ? '#3b82f6' : '#f59e0b')),
           borderRadius: 6,
           barPercentage: 0.62,
           categoryPercentage: 0.78
@@ -455,7 +614,7 @@
             color: '#0f172a',
             font: { weight: '800', size: window.innerWidth >= 640 ? 11.5 : 10 },
             formatter: (v, context) => {
-              const d = details[context.dataIndex];
+              const d = activeRadarDetails[context.dataIndex];
               if (currentKppnMode === 'nominal') {
                 if (!d) return v.toFixed(2) + ' T';
                 const valRp = context.datasetIndex === 0 ? d.pagu : d.realisasi;
@@ -474,7 +633,7 @@
           tooltip: {
             callbacks: {
               label: function(ctx) {
-                const d = details[ctx.dataIndex];
+                const d = activeRadarDetails[ctx.dataIndex];
                 if (!d) return ` Serapan: ${ctx.parsed.x.toFixed(2)}%`;
                 return [
                   ` Serapan: ${d.persentase_formatted}`,
@@ -505,17 +664,38 @@
     });
   }
 
+  function switchKppnScope(scope) {
+    currentKppnScope = scope;
+    const activeCls = 'px-2.5 py-1 rounded-md font-bold bg-blue-600 text-white shadow-2xs transition-all';
+    const idleCls = 'px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900 transition-all';
+    document.getElementById('btnKppnScopeAll').className = scope === 'all' ? activeCls : idleCls;
+    document.getElementById('btnKppnScopeKl').className = scope === 'kl' ? activeCls : idleCls;
+    document.getElementById('btnKppnScopeBun').className = scope === 'bun' ? activeCls : idleCls;
+
+    const subText = {
+      all: 'Realisasi / Pagu APBN (K/L + TKD)',
+      kl: 'Realisasi / Pagu DIPA K/L',
+      bun: 'Realisasi / Pagu TKD (BA BUN)'
+    };
+    const subEl = document.getElementById('labelKppnSub');
+    if (subEl) subEl.textContent = subText[scope];
+
+    updateHighlightCards(scope);
+    switchKppnView(currentKppnMode);
+  }
+
   function switchKppnView(mode) {
     if (!chartRadarKppnInstance) return;
     currentKppnMode = mode;
 
     const btnPct = document.getElementById('btnKppnPct');
     const btnNom = document.getElementById('btnKppnNominal');
-    const details = kppnRankingMaster.details || [];
+    activeRadarDetails = buildKppnSeries(currentKppnScope);
+    chartRadarKppnInstance.data.labels = activeRadarDetails.map(d => d.nama);
 
     if (mode === 'nominal') {
-      const paguT = details.map(d => +(d.pagu / 1e12).toFixed(3));
-      const realT = details.map(d => +(d.realisasi / 1e12).toFixed(3));
+      const paguT = activeRadarDetails.map(d => +(d.pagu / 1e12).toFixed(3));
+      const realT = activeRadarDetails.map(d => +(d.realisasi / 1e12).toFixed(3));
       const maxT = Math.ceil(Math.max(...paguT, 1) * 1.1);
 
       chartRadarKppnInstance.data.datasets = [
@@ -545,10 +725,11 @@
       if (btnNom) btnNom.className = 'px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all';
       if (btnPct) btnPct.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all';
     } else {
+      const persenArr = activeRadarDetails.map(d => d.persen);
       chartRadarKppnInstance.data.datasets = [{
         label: '% Realisasi',
-        data: kppnRankingMaster.persen,
-        backgroundColor: kppnRankingMaster.persen.map(p => p >= 80 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
+        data: persenArr,
+        backgroundColor: persenArr.map(p => p >= 85 ? '#10b981' : (p >= 75 ? '#3b82f6' : '#f59e0b')),
         borderRadius: 6,
         barPercentage: 0.62,
         categoryPercentage: 0.78
