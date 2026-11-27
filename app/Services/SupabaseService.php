@@ -207,6 +207,7 @@ class SupabaseService
         }
 
         return [
+            'codes' => ['145', '025', '060', '012', '139', '022', '135', '015', '076', '005'],
             'labels' => [
                 'Kementerian Pekerjaan Umum (BPJN/BWS)',
                 'Kementerian Agama',
@@ -978,18 +979,23 @@ class SupabaseService
             $details = [];
             foreach ($realJenis as $j) {
                 $labels[] = $j['kode'] . ' ' . $j['nama'];
-                $pTril = round($j['pagu'] / 1000000000000, 2);
-                $rTril = round($j['realisasi'] / 1000000000000, 2);
-                $pagu[] = $pTril > 0 ? $pTril : round($j['pagu'] / 1000000000, 2);
-                $real[] = $rTril > 0 ? $rTril : round($j['realisasi'] / 1000000000, 2);
-                $paguBadges[] = $j['pagu'] >= 1000000000000 ? number_format($pTril, 1, ',', '.') . ' T' : number_format($j['pagu'] / 1000000000, 1, ',', '.') . ' M';
-                $realBadges[] = $j['realisasi'] >= 1000000000000 ? number_format($rTril, 1, ',', '.') . ' T' : number_format($j['realisasi'] / 1000000000, 1, ',', '.') . ' M';
+                $pTril = round($j['pagu'] / 1000000000000, 4);
+                $rTril = round($j['realisasi'] / 1000000000000, 4);
+                $pagu[] = $pTril;
+                $real[] = $rTril;
+                $paguBadges[] = $j['pagu'] >= 1000000000000 ? number_format($j['pagu'] / 1000000000000, 1, ',', '.') . ' T' : number_format($j['pagu'] / 1000000000, 1, ',', '.') . ' M';
+                $realBadges[] = $j['realisasi'] >= 1000000000000 ? number_format($j['realisasi'] / 1000000000000, 1, ',', '.') . ' T' : number_format($j['realisasi'] / 1000000000, 1, ',', '.') . ' M';
+                $pctNum = $j['pagu'] > 0 ? round(($j['realisasi'] / $j['pagu']) * 100, 2) : 0;
+                $sisa = max(0, (int) $j['pagu'] - (int) $j['realisasi']);
+                $sisaBadge = $sisa >= 1000000000000 ? number_format($sisa / 1000000000000, 1, ',', '.') . ' T' : number_format($sisa / 1000000000, 1, ',', '.') . ' M';
                 $details[] = [
                     'akun' => $j['kode'],
                     'nama' => $j['nama'],
                     'pagu' => $j['pagu_formatted'],
                     'realisasi' => $j['realisasi_formatted'],
                     'persen' => $j['persentase_formatted'],
+                    'persen_num' => $pctNum,
+                    'sisa_badge' => $sisaBadge,
                 ];
             }
             return [

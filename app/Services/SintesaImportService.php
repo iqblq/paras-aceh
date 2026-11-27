@@ -1612,6 +1612,7 @@ class SintesaImportService
             ->groupBy('kementerian_kode')
             ->pluck('total_realisasi', 'kementerian_kode');
 
+        $topKlCodes = [];
         $topKlLabels = [];
         $topKlPaguArr = [];
         $topKlRealArr = [];
@@ -1630,12 +1631,14 @@ class SintesaImportService
                 'Kemendiktisaintek'
             ], $cleanName);
 
+            $topKlCodes[] = str_pad((string) $k->kementerian_kode, 3, '0', STR_PAD_LEFT);
             $topKlLabels[] = $cleanName;
             $topKlPaguArr[] = round($k->total_pagu / 1000000000000, 2);
             $topKlRealArr[] = round($r / 1000000000000, 2);
         }
 
         $this->saveSummary('top_10_kl', [
+            'codes' => $topKlCodes,
             'labels' => $topKlLabels,
             'pagu' => $topKlPaguArr,
             'realisasi' => $topKlRealArr,

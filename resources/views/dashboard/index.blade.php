@@ -297,7 +297,7 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200/90 p-3.5 sm:p-5 shadow-sm">
-      <div class="relative h-72 sm:h-80 lg:h-96 w-full">
+      <div class="relative h-80 sm:h-96 lg:h-[420px] w-full">
         <canvas id="chartTopKL"></canvas>
       </div>
       <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 font-mono gap-1">
@@ -424,16 +424,26 @@
     </div>
   </div>
 
-  <!-- SECTION 8: "📊 PAGU & REALISASI PER JENIS BELANJA" (PERSIS GAMBAR 5) -->
+  <!-- SECTION 8: "📊 PAGU & REALISASI PER JENIS BELANJA" -->
   <div class="space-y-3">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-0.5">
       <div class="flex items-center gap-2 text-xs sm:text-sm font-black text-slate-800 tracking-tight uppercase">
         <span class="text-base">📊</span>
         <span>PAGU & REALISASI PER JENIS BELANJA</span>
       </div>
-      <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <!-- Toggle Nominal vs Persentase -->
+        <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+          <button id="btnJbNominal" onclick="switchJbView('nominal')" class="px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all">
+            Nominal (Triliun)
+          </button>
+          <button id="btnJbPercent" onclick="switchJbView('percent')" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            Persentase (%)
+          </button>
+        </div>
+
         <!-- Legend Indicator -->
-        <div class="flex items-center gap-3 text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/70">
+        <div id="jbLegendNominal" class="flex items-center gap-3 text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/70">
           <div class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded-sm bg-[#1e40af]"></span>
             <span class="text-slate-700">Pagu</span>
@@ -443,7 +453,7 @@
             <span class="text-slate-700">Realisasi</span>
           </div>
         </div>
-        <!-- Link Persis Gambar 5: "Lihat Semua Rincian Satker →" -->
+
         <a href="{{ route('satker.index') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors group">
           <span>Lihat Semua Rincian Satker</span>
           <span class="group-hover:translate-x-0.5 transition-transform">&rarr;</span>
@@ -451,14 +461,41 @@
       </div>
     </div>
 
-    <!-- Chart Card Pagu & Realisasi per Jenis Belanja (Persis Gambar 5) -->
+    <!-- Chart Card Pagu & Realisasi per Jenis Belanja -->
     <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-3.5 sm:p-5">
-      <div class="relative h-72 sm:h-80 lg:h-96 w-full">
+      <div class="relative h-72 sm:h-80 w-full">
         <canvas id="chartJenisBelanjaBar"></canvas>
       </div>
+
+      <!-- Strip Ringkasan 4 Jenis Belanja (Membantu Keterbacaan Skala Kecil spt Bansos 57 & % Serapan) -->
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        @foreach(($jenisBelanjaChart['details'] ?? []) as $jbIdx => $jbDet)
+          @php
+            $pctVal = $jbDet['persen_num'] ?? (float) str_replace(',', '.', str_replace('%', '', $jbDet['persen'] ?? '0'));
+            $badgeTone = $pctVal >= 80
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : ($pctVal >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200');
+            $barTone = $pctVal >= 80 ? 'bg-emerald-500' : ($pctVal >= 60 ? 'bg-amber-500' : 'bg-rose-500');
+          @endphp
+          <div class="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-extrabold text-slate-800 truncate">{{ $jbDet['akun'] ?? '' }} {{ $jbDet['nama'] ?? '' }}</span>
+              <span class="shrink-0 text-[11px] font-extrabold px-2 py-0.5 rounded-full border {{ $badgeTone }}">{{ $jbDet['persen'] ?? '0%' }}</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+              <div class="h-full rounded-full {{ $barTone }}" style="width: {{ min(100, max(2, $pctVal)) }}%"></div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <span>Pagu: <strong class="text-slate-700">{{ $jenisBelanjaChart['pagu_badges'][$jbIdx] ?? '-' }}</strong></span>
+              <span>Real: <strong class="text-slate-800">{{ $jenisBelanjaChart['realisasi_badges'][$jbIdx] ?? '-' }}</strong></span>
+            </div>
+          </div>
+        @endforeach
+      </div>
+
       <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-mono gap-1">
         <span>Monitoring per kode akun belanja APBN (Pegawai 51, Barang 52, Modal 53, Bansos 57)</span>
-        <span>Skala dalam Triliun Rupiah</span>
+        <span id="labelJbScale">Skala dalam Triliun Rupiah</span>
       </div>
     </div>
   </div>
@@ -971,14 +1008,79 @@
     if (e.key === 'Escape') closeKppnDetailModal();
   });
 
-  // 2. CHART 10 K/L TERBESAR DENGAN TOGGLE NOMINAL VS PERSEN
+  // 2. CHART 10 K/L TERBESAR DENGAN TOGGLE NOMINAL VS PERSEN + LOGO PER K/L
   let chartTopKLInstance = null;
   let currentTopKlMode = 'nominal';
   const klDataMaster = @json($topKl);
+  const klLogoBaseUrl = "{{ asset('images/kl') }}";
+  const klLogoCache = {};
+
+  function preloadKlLogos(codes) {
+    (codes || []).forEach((code) => {
+      if (!code || klLogoCache[code]) return;
+      const img = new Image();
+      img._failed = false;
+      img.onload = () => {
+        if (chartTopKLInstance) chartTopKLInstance.draw();
+      };
+      img.onerror = () => {
+        img._failed = true;
+        if (chartTopKLInstance) chartTopKLInstance.draw();
+      };
+      img.src = `${klLogoBaseUrl}/${code}.png`;
+      klLogoCache[code] = img;
+    });
+  }
+
+  const klLogoPlugin = {
+    id: 'klLogoPlugin',
+    afterDraw(chart) {
+      const codes = klDataMaster.codes || [];
+      const labels = klDataMaster.labels || [];
+      const yScale = chart.scales?.y;
+      const area = chart.chartArea;
+      if (!yScale || !area || !codes.length) return;
+
+      const ctx = chart.ctx;
+      const iconSize = window.innerWidth < 640 ? 18 : 22;
+      const xPos = Math.max(4, area.left - iconSize - 7);
+
+      ctx.save();
+      codes.forEach((code, i) => {
+        const yCenter = yScale.getPixelForValue(i);
+        if (yCenter < area.top - 10 || yCenter > area.bottom + 10) return;
+        const yPos = yCenter - iconSize / 2;
+        const img = klLogoCache[code];
+
+        if (img && img.complete && !img._failed && img.naturalWidth > 0) {
+          ctx.drawImage(img, xPos, yPos, iconSize, iconSize);
+        } else {
+          // Fallback badge jika kode K/L baru belum punya file PNG
+          const rawLabel = (labels[i] || code || 'KL').replace(/Kementerian\s+/i, '').trim();
+          const initials = rawLabel.split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || 'KL';
+          const cx = xPos + iconSize / 2;
+          const cy = yCenter;
+          ctx.beginPath();
+          ctx.arc(cx, cy, iconSize / 2 - 1, 0, Math.PI * 2);
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fill();
+          ctx.fillStyle = '#334155';
+          ctx.font = `bold ${Math.round(iconSize * 0.42)}px "Plus Jakarta Sans", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(initials, cx, cy + 0.5);
+        }
+      });
+      ctx.restore();
+    }
+  };
 
   function initChartTopKL() {
     const ctx = document.getElementById('chartTopKL');
     if (!ctx) return;
+
+    preloadKlLogos(klDataMaster.codes || []);
+    const isMobile = window.innerWidth < 640;
 
     chartTopKLInstance = new Chart(ctx.getContext('2d'), {
       type: 'bar',
@@ -1003,6 +1105,7 @@
           }
         ]
       },
+      plugins: [klLogoPlugin],
       options: {
         indexAxis: 'y',
         responsive: true,
@@ -1035,7 +1138,11 @@
           },
           y: {
             grid: { display: false },
-            ticks: { font: { size: 12.5, weight: 'bold' }, color: '#0f172a' }
+            ticks: {
+              padding: isMobile ? 28 : 34,
+              font: { size: isMobile ? 11 : 12.5, weight: 'bold' },
+              color: '#0f172a'
+            }
           }
         }
       }
@@ -1243,13 +1350,26 @@
     }
   }
 
-  // 5. CHART PAGU & REALISASI PER JENIS BELANJA (PERSIS GAMBAR 5)
+  // 5. CHART PAGU & REALISASI PER JENIS BELANJA (DENGAN TOGGLE NOMINAL VS PERSENTASE + RINGKASAN SERAPAN)
   let chartJenisBelanjaBarInstance = null;
+  let currentJbMode = 'nominal';
+  const jbDataMaster = @json($jenisBelanjaChart);
+
+  function getJbPctData() {
+    return (jbDataMaster.details || []).map((d, i) => {
+      if (typeof d.persen_num === 'number') return d.persen_num;
+      const p = jbDataMaster.pagu[i] || 0;
+      const r = jbDataMaster.realisasi[i] || 0;
+      return p > 0 ? parseFloat(((r / p) * 100).toFixed(2)) : 0;
+    });
+  }
+
   function initChartJenisBelanjaBar() {
     const ctx = document.getElementById('chartJenisBelanjaBar');
     if (!ctx) return;
 
-    const jbData = @json($jenisBelanjaChart);
+    const jbData = jbDataMaster;
+    const maxY = Math.ceil(Math.max(...jbData.pagu, ...jbData.realisasi, 1) * 1.2);
 
     chartJenisBelanjaBarInstance = new Chart(ctx.getContext('2d'), {
       type: 'bar',
@@ -1260,23 +1380,28 @@
             label: 'Pagu',
             data: jbData.pagu,
             backgroundColor: '#1e40af',
-            borderRadius: 4,
-            barPercentage: 0.62,
-            categoryPercentage: 0.65
+            borderRadius: 6,
+            barPercentage: 0.78,
+            categoryPercentage: 0.68,
+            maxBarThickness: 64,
+            minBarLength: 6
           },
           {
             label: 'Realisasi',
             data: jbData.realisasi,
             backgroundColor: '#f59e0b',
-            borderRadius: 4,
-            barPercentage: 0.62,
-            categoryPercentage: 0.65
+            borderRadius: 6,
+            barPercentage: 0.78,
+            categoryPercentage: 0.68,
+            maxBarThickness: 64,
+            minBarLength: 6
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { top: 14 } },
         plugins: {
           legend: { display: false },
           datalabels: {
@@ -1284,13 +1409,20 @@
             anchor: 'end',
             align: 'top',
             offset: 4,
+            textAlign: 'center',
             color: '#0f172a',
-            font: { weight: '800', size: 12 },
+            font: { weight: '800', size: 11.5 },
             formatter: function(value, context) {
               const idx = context.dataIndex;
-              return context.datasetIndex === 0 
-                ? jbData.pagu_badges[idx] 
-                : jbData.realisasi_badges[idx];
+              const d = jbData.details[idx];
+              if (currentJbMode === 'percent') {
+                return `${value.toFixed(2).replace('.', ',')}%`;
+              }
+              if (context.datasetIndex === 0) {
+                return jbData.pagu_badges[idx];
+              }
+              const pctTxt = d && d.persen ? `(${d.persen})` : '';
+              return pctTxt ? [jbData.realisasi_badges[idx], pctTxt] : jbData.realisasi_badges[idx];
             }
           },
           tooltip: {
@@ -1298,9 +1430,14 @@
               label: function(ctx) {
                 const idx = ctx.dataIndex;
                 const d = jbData.details[idx];
+                if (currentJbMode === 'percent') {
+                  return d
+                    ? ` Serapan: ${d.persen} (${d.realisasi} / ${d.pagu})`
+                    : ` Serapan: ${ctx.parsed.y}%`;
+                }
                 if (!d) return ` ${ctx.dataset.label}: ${ctx.parsed.y} T`;
-                return ctx.datasetIndex === 0 
-                  ? ` Pagu: ${d.pagu}` 
+                return ctx.datasetIndex === 0
+                  ? ` Pagu: ${d.pagu}`
                   : ` Realisasi: ${d.realisasi} (${d.persen})`;
               }
             }
@@ -1309,7 +1446,7 @@
         scales: {
           y: {
             beginAtZero: true,
-            max: Math.ceil(Math.max(...jbData.pagu, ...jbData.realisasi, 1) * 1.15),
+            max: maxY,
             ticks: {
               stepSize: 2,
               callback: (v) => v + ' T',
@@ -1325,6 +1462,71 @@
         }
       }
     });
+  }
+
+  function switchJbView(mode) {
+    if (!chartJenisBelanjaBarInstance) return;
+    currentJbMode = mode;
+
+    const btnNom = document.getElementById('btnJbNominal');
+    const btnPct = document.getElementById('btnJbPercent');
+    const legNom = document.getElementById('jbLegendNominal');
+    const lblScale = document.getElementById('labelJbScale');
+
+    if (mode === 'percent') {
+      const pcts = getJbPctData();
+      chartJenisBelanjaBarInstance.data.datasets = [{
+        label: 'Persentase Serapan',
+        data: pcts,
+        backgroundColor: pcts.map(v => v >= 80 ? '#10b981' : (v >= 60 ? '#f59e0b' : '#ef4444')),
+        borderRadius: 6,
+        barPercentage: 0.55,
+        categoryPercentage: 0.65,
+        maxBarThickness: 72
+      }];
+      chartJenisBelanjaBarInstance.options.scales.y.max = 115;
+      chartJenisBelanjaBarInstance.options.scales.y.ticks.stepSize = 20;
+      chartJenisBelanjaBarInstance.options.scales.y.ticks.callback = (v) => v <= 100 ? v + '%' : '';
+
+      if (btnPct) btnPct.className = 'px-2.5 py-1 rounded-md font-bold bg-white text-emerald-700 shadow-2xs transition-all';
+      if (btnNom) btnNom.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all';
+      if (legNom) legNom.classList.add('hidden');
+      if (lblScale) lblScale.textContent = 'Skala dalam Persentase Serapan (%)';
+    } else {
+      const maxY = Math.ceil(Math.max(...jbDataMaster.pagu, ...jbDataMaster.realisasi, 1) * 1.2);
+      chartJenisBelanjaBarInstance.data.datasets = [
+        {
+          label: 'Pagu',
+          data: jbDataMaster.pagu,
+          backgroundColor: '#1e40af',
+          borderRadius: 6,
+          barPercentage: 0.78,
+          categoryPercentage: 0.68,
+          maxBarThickness: 64,
+          minBarLength: 6
+        },
+        {
+          label: 'Realisasi',
+          data: jbDataMaster.realisasi,
+          backgroundColor: '#f59e0b',
+          borderRadius: 6,
+          barPercentage: 0.78,
+          categoryPercentage: 0.68,
+          maxBarThickness: 64,
+          minBarLength: 6
+        }
+      ];
+      chartJenisBelanjaBarInstance.options.scales.y.max = maxY;
+      chartJenisBelanjaBarInstance.options.scales.y.ticks.stepSize = 2;
+      chartJenisBelanjaBarInstance.options.scales.y.ticks.callback = (v) => v + ' T';
+
+      if (btnNom) btnNom.className = 'px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all';
+      if (btnPct) btnPct.className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all';
+      if (legNom) legNom.classList.remove('hidden');
+      if (lblScale) lblScale.textContent = 'Skala dalam Triliun Rupiah';
+    }
+
+    chartJenisBelanjaBarInstance.update();
   }
 
   document.addEventListener('DOMContentLoaded', function() {
