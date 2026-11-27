@@ -22,12 +22,14 @@ class SintesaImportService
         }
 
         // 1. Scan seluruh file inquiry_data_pagu_realisasi_2026_*.csv:
-        //    - File yang punya kolom akun_kode -> Master Pagu, Realisasi & Blokir (K/L, BUN, Jenis Belanja, TKD DBH/Otsus)
+        //    - File level akun (tanpa kabkota_kode & outputkro_kode) -> Master Pagu, Realisasi & Blokir se-Aceh
+        //    - File BA 999 kabkota+akun (ada kabkota_kode & akun_kode) -> Rincian TKD/DBH per Pemda x Akun
         //    - File yang punya kolom outputkro_kode -> Ekstraksi Tematik Penanganan Bencana per Output/Kegiatan
         $paguRealFiles = glob("{$folder}/inquiry_data_pagu_realisasi_2026_*.csv") ?: [];
         usort($paguRealFiles, fn($a, $b) => filemtime($b) <=> filemtime($a));
 
         $paguRealAkunFile = null;
+        $paguRealTkdDetailFile = null;
         $paguRealOutputFile = null;
         foreach ($paguRealFiles as $prf) {
             $fh = fopen($prf, 'r');
@@ -35,10 +37,17 @@ class SintesaImportService
             if ($fh) fclose($fh);
             $hdrStr = strtolower(implode(',', $hdr ?: []));
 
-            if (!$paguRealAkunFile && str_contains($hdrStr, 'akun_kode')) {
+            $hasAkun = str_contains($hdrStr, 'akun_kode');
+            $hasKab = str_contains($hdrStr, 'kabkota_kode');
+            $hasOut = str_contains($hdrStr, 'outputkro_kode');
+
+            if (!$paguRealAkunFile && $hasAkun && !$hasKab && !$hasOut) {
                 $paguRealAkunFile = $prf;
             }
-            if (!$paguRealOutputFile && str_contains($hdrStr, 'outputkro_kode')) {
+            if (!$paguRealTkdDetailFile && $hasAkun && $hasKab && !$hasOut) {
+                $paguRealTkdDetailFile = $prf;
+            }
+            if (!$paguRealOutputFile && $hasOut) {
                 $paguRealOutputFile = $prf;
             }
         }
@@ -59,6 +68,10 @@ class SintesaImportService
 
         if ($paguRealOutputFile) {
             $results['penanganan_bencana'] = $this->importBencanaFromOutputCsv($paguRealOutputFile);
+        }
+
+        if ($paguRealTkdDetailFile) {
+            $results['tkd_dbh_detail'] = $this->importTkdDbhDetailFromCsv($paguRealTkdDetailFile);
         }
 
         // 2. Scan file Tematik dari Inquiry Data Tematik (Prioritas Presiden, Program Strategis, Bantuan Pemerintah)
@@ -1437,6 +1450,7 @@ class SintesaImportService
                 : (str_contains($uraian, 'Sawit') ? 'SDA Perkebunan' : 'SDA Minerba')))));
             $dbhItems[] = [
                 'no' => $dbhNo++,
+                'akun_kode' => $dr->akun_kode,
                 'uraian' => $uraian,
                 'kategori' => $kat,
                 'pagu' => $paguD,
@@ -1750,6 +1764,10 @@ class SintesaImportService
         $totalPagu = 0;
         $totalReal = 0;
 
+        $dbhByRegion = [];
+        $dbhTotalPagu = 0;
+        $dbhTotalReal = 0;
+
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) < count($header)) continue;
 
@@ -1758,6 +1776,7 @@ class SintesaImportService
 
             $klKode = trim($row[$idx['kementerian_kode'] ?? -1] ?? '');
             $klUraian = trim($row[$idx['kementerian_uraian'] ?? -1] ?? '');
+            $kabKode = trim($row[$idx['kabkota_kode'] ?? -1] ?? '');
             $kabUraian = trim($row[$idx['kabkota_uraian'] ?? -1] ?? 'ACEH');
             $satKode = trim($row[$idx['satker_kode'] ?? -1] ?? '');
             $satUraian = trim($row[$idx['satker_uraian'] ?? -1] ?? '');
@@ -1767,6 +1786,28 @@ class SintesaImportService
             $giatUraian = trim($row[$idx['kegiatan_uraian'] ?? -1] ?? '');
             $outKode = trim($row[$idx['outputkro_kode'] ?? -1] ?? '');
             $outUraian = trim($row[$idx['outputkro_uraian'] ?? -1] ?? '');
+            $pagu = (int) round((float) ($row[$idx['pagu_dipa'] ?? -1] ?? 0));
+            $real = (int) round((float) ($row[$idx['realisasi'] ?? -1] ?? 0));
+
+            if ($klKode === '999' && stripos($giatUraian, 'Dana Bagi Hasil') !== false) {
+                $regionName = (string) preg_replace('/\s+/', ' ', strtoupper($kabUraian ?: 'ACEH'));
+                $regionKey = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '_', $regionName), '_'));
+                if ($regionKey === '') {
+                    $regionKey = 'aceh';
+                }
+                if (!isset($dbhByRegion[$regionKey])) {
+                    $dbhByRegion[$regionKey] = [
+                        'kode' => $kabKode !== '' ? $kabKode : $regionKey,
+                        'nama' => $regionName,
+                        'pagu' => 0,
+                        'realisasi' => 0,
+                    ];
+                }
+                $dbhByRegion[$regionKey]['pagu'] += $pagu;
+                $dbhByRegion[$regionKey]['realisasi'] += $real;
+                $dbhTotalPagu += $pagu;
+                $dbhTotalReal += $real;
+            }
 
             $hay = strtoupper("{$giatUraian} | {$outUraian}");
             $isCoreBencana = ($klKode === '107' && !in_array($outKode, ['EBA', 'EBB'], true))
@@ -1776,8 +1817,6 @@ class SintesaImportService
 
             if (!$isCoreBencana) continue;
 
-            $pagu = (int) round((float) ($row[$idx['pagu_dipa'] ?? -1] ?? 0));
-            $real = (int) round((float) ($row[$idx['realisasi'] ?? -1] ?? 0));
             $blokir = (int) round((float) ($row[$idx['blokir'] ?? -1] ?? 0));
             $pct = $pagu > 0 ? round(($real / $pagu) * 100, 2) : 0.0;
 
@@ -1868,6 +1907,38 @@ class SintesaImportService
             'rkkl_pagu_short' => '-',
         ];
 
+        if (!empty($dbhByRegion)) {
+            uasort($dbhByRegion, fn($a, $b) => $b['realisasi'] <=> $a['realisasi']);
+            $palette = ['#2563eb', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#64748b', '#475569'];
+            $dbhDaerah = [
+                'total' => [
+                    'kode' => 'TOTAL',
+                    'nama' => 'TOTAL DBH',
+                    'pagu' => $dbhTotalPagu,
+                    'realisasi' => $dbhTotalReal,
+                    'pct' => $dbhTotalPagu > 0 ? round(($dbhTotalReal / $dbhTotalPagu) * 100, 2) : 0.0,
+                    'porsi' => 100.0,
+                    'color' => '#1e40af',
+                ],
+            ];
+            $colorIdx = 0;
+            foreach ($dbhByRegion as $rKey => $rVal) {
+                $rPagu = $rVal['pagu'];
+                $rReal = $rVal['realisasi'];
+                $dbhDaerah[$rKey] = [
+                    'kode' => $rVal['kode'],
+                    'nama' => $rVal['nama'],
+                    'pagu' => $rPagu,
+                    'realisasi' => $rReal,
+                    'pct' => $rPagu > 0 ? round(($rReal / $rPagu) * 100, 2) : 0.0,
+                    'porsi' => $dbhTotalReal > 0 ? round(($rReal / $dbhTotalReal) * 100, 2) : 0.0,
+                    'color' => $palette[$colorIdx] ?? '#94a3b8',
+                ];
+                $colorIdx++;
+            }
+            $this->saveSummary('tkd_dbh_daerah', $dbhDaerah);
+        }
+
         $this->saveSummary('bencana_summary', $summary);
         $this->saveSummary('bencana_outputs', $outputs);
         $this->saveSummary('bencana_items', $rawItems);
@@ -1879,6 +1950,134 @@ class SintesaImportService
             'outputs' => count($outputs),
             'total_pagu' => $totalPagu,
             'total_realisasi' => $totalReal,
+            'dbh_regions' => count($dbhByRegion),
+            'file' => basename($filePath),
+        ];
+    }
+
+    /**
+     * Ekstraksi rincian TKD/DBH per Kab/Kota x Jenis Akun dari CSV BA 999 (kabkota + kegiatan + akun)
+     */
+    public function importTkdDbhDetailFromCsv(string $filePath): array
+    {
+        $handle = fopen($filePath, 'r');
+        if (!$handle) return ['status' => 'error', 'message' => 'Gagal membuka file TKD detail'];
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            return ['status' => 'error', 'message' => 'Header file TKD detail kosong'];
+        }
+        $idx = array_flip(array_map(fn($c) => strtolower(trim((string) $c)), $header));
+
+        $dbhByRegion = [];
+        $dbhTotalPagu = 0;
+        $dbhTotalReal = 0;
+        $rowCount = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < count($header)) continue;
+            if (trim((string) ($row[$idx['kanwil_kode'] ?? -1] ?? '')) !== '01') continue;
+            if (trim((string) ($row[$idx['kementerian_kode'] ?? -1] ?? '')) !== '999') continue;
+
+            $giatUraian = trim((string) ($row[$idx['kegiatan_uraian'] ?? -1] ?? ''));
+            if (stripos($giatUraian, 'Dana Bagi Hasil') === false) continue;
+
+            $kabKode = trim((string) ($row[$idx['kabkota_kode'] ?? -1] ?? ''));
+            $kabUraian = trim((string) ($row[$idx['kabkota_uraian'] ?? -1] ?? 'ACEH'));
+            $akunKode = trim((string) ($row[$idx['akun_kode'] ?? -1] ?? ''));
+            $pagu = (int) round((float) ($row[$idx['pagu_dipa'] ?? -1] ?? 0));
+            $real = (int) round((float) ($row[$idx['realisasi'] ?? -1] ?? 0));
+
+            $regionName = (string) preg_replace('/\s+/', ' ', strtoupper($kabUraian ?: 'ACEH'));
+            $regionKey = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '_', $regionName), '_'));
+            if ($regionKey === '') {
+                $regionKey = 'aceh';
+            }
+
+            if (!isset($dbhByRegion[$regionKey])) {
+                $dbhByRegion[$regionKey] = [
+                    'kode' => $kabKode !== '' ? $kabKode : $regionKey,
+                    'nama' => $regionName,
+                    'pagu' => 0,
+                    'realisasi' => 0,
+                    'items' => [],
+                ];
+            }
+            $dbhByRegion[$regionKey]['pagu'] += $pagu;
+            $dbhByRegion[$regionKey]['realisasi'] += $real;
+
+            if ($akunKode !== '') {
+                if (!isset($dbhByRegion[$regionKey]['items'][$akunKode])) {
+                    $dbhByRegion[$regionKey]['items'][$akunKode] = [
+                        'pagu' => 0,
+                        'realisasi' => 0,
+                    ];
+                }
+                $dbhByRegion[$regionKey]['items'][$akunKode]['pagu'] += $pagu;
+                $dbhByRegion[$regionKey]['items'][$akunKode]['realisasi'] += $real;
+            }
+
+            $dbhTotalPagu += $pagu;
+            $dbhTotalReal += $real;
+            $rowCount++;
+        }
+        fclose($handle);
+
+        if (!empty($dbhByRegion)) {
+            uasort($dbhByRegion, fn($a, $b) => $b['realisasi'] <=> $a['realisasi']);
+            $palette = ['#2563eb', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#64748b', '#475569'];
+            $dbhDaerah = [
+                'total' => [
+                    'kode' => 'TOTAL',
+                    'nama' => 'TOTAL DBH',
+                    'pagu' => $dbhTotalPagu,
+                    'realisasi' => $dbhTotalReal,
+                    'pct' => $dbhTotalPagu > 0 ? round(($dbhTotalReal / $dbhTotalPagu) * 100, 2) : 0.0,
+                    'porsi' => 100.0,
+                    'color' => '#1e40af',
+                    'has_detail' => true,
+                ],
+            ];
+            $colorIdx = 0;
+            foreach ($dbhByRegion as $rKey => $rVal) {
+                $rPagu = $rVal['pagu'];
+                $rReal = $rVal['realisasi'];
+                $itemsFormatted = [];
+                foreach ($rVal['items'] as $aKode => $aVal) {
+                    $aPagu = $aVal['pagu'];
+                    $aReal = $aVal['realisasi'];
+                    $aPct = $aPagu > 0 ? round(($aReal / $aPagu) * 100, 2) : 0.0;
+                    $itemsFormatted[$aKode] = [
+                        'pagu' => $aPagu,
+                        'realisasi' => $aReal,
+                        'sisa' => max(0, $aPagu - $aReal),
+                        'pct' => $aPct,
+                        'status' => $aPct >= 95 ? 'Optimal' : ($aPct >= 80 ? 'On Track' : 'Perhatian'),
+                    ];
+                }
+                $dbhDaerah[$rKey] = [
+                    'kode' => $rVal['kode'],
+                    'nama' => $rVal['nama'],
+                    'pagu' => $rPagu,
+                    'realisasi' => $rReal,
+                    'pct' => $rPagu > 0 ? round(($rReal / $rPagu) * 100, 2) : 0.0,
+                    'porsi' => $dbhTotalReal > 0 ? round(($rReal / $dbhTotalReal) * 100, 2) : 0.0,
+                    'color' => $palette[$colorIdx] ?? '#94a3b8',
+                    'items' => $itemsFormatted,
+                ];
+                $colorIdx++;
+            }
+            $this->saveSummary('tkd_dbh_daerah', $dbhDaerah);
+        }
+
+        $this->logSync(basename($filePath), 'TKD_DBH_DETAIL', $rowCount);
+
+        return [
+            'rows' => $rowCount,
+            'dbh_regions' => count($dbhByRegion),
+            'total_pagu' => $dbhTotalPagu,
+            'total_realisasi' => $dbhTotalReal,
             'file' => basename($filePath),
         ];
     }

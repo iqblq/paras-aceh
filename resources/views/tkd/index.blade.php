@@ -161,14 +161,33 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
+      @php
+        $dbhTotalSummary = $dbhDaerah['total'] ?? ['pagu' => 0, 'realisasi' => 0, 'pct' => 0];
+        $dbhRegions = collect($dbhDaerah)->except(['total'])->sortByDesc('realisasi');
+        $dbhRegionCount = $dbhRegions->count();
+        $dbhTopRegions = $dbhRegions->take(6)->values();
+        $dbhOtherRegions = $dbhRegions->slice(6);
+        $dbhOtherReal = $dbhOtherRegions->sum('realisasi');
+        $dbhOtherPorsi = ($dbhTotalSummary['realisasi'] ?? 0) > 0
+            ? round(($dbhOtherReal / $dbhTotalSummary['realisasi']) * 100, 1)
+            : 0.0;
+        $dbhBadgeClasses = [
+            ['bg' => 'bg-blue-50 text-blue-700', 'dot' => 'bg-blue-600'],
+            ['bg' => 'bg-red-50 text-red-700', 'dot' => 'bg-red-500'],
+            ['bg' => 'bg-emerald-50 text-emerald-700', 'dot' => 'bg-emerald-500'],
+            ['bg' => 'bg-amber-50 text-amber-700', 'dot' => 'bg-amber-500'],
+            ['bg' => 'bg-purple-50 text-purple-700', 'dot' => 'bg-purple-500'],
+            ['bg' => 'bg-cyan-50 text-cyan-700', 'dot' => 'bg-cyan-500'],
+        ];
+      @endphp
       <!-- Chart 1: Porsi Realisasi DBH (Per Daerah) -->
       <div class="bg-white rounded-2xl border border-slate-200/90 border-t-[4px] border-t-blue-600 p-4 sm:p-5 shadow-sm flex flex-col justify-between">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <h3 class="text-xs sm:text-sm font-extrabold text-slate-800">Porsi Realisasi DBH (Per Daerah)</h3>
-            <p class="text-[11px] text-slate-400 mt-0.5">Total Realisasi Salur DBH: Rp 402,71 Miliar</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Total Realisasi Salur DBH: Rp {{ number_format(($dbhTotalSummary['realisasi'] ?? 0) / 1e9, 2, ',', '.') }} Miliar</p>
           </div>
-          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">6 Daerah</span>
+          <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{{ $dbhRegionCount }} Daerah</span>
         </div>
 
         <div class="relative w-full h-[260px] sm:h-[280px] my-3 flex items-center justify-center">
@@ -176,12 +195,13 @@
         </div>
 
         <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2 text-[11px]">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> ACEH: 72,3%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-50 text-red-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> KOTA BANDA ACEH: 12,9%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> KAB. ACEH BESAR: 5,6%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> KAB. PIDIE: 4,1%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> KAB. PIDIE JAYA: 4,0%</span>
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span> KOTA SABANG: 1,1%</span>
+          @foreach($dbhTopRegions as $idx => $reg)
+            @php $cls = $dbhBadgeClasses[$idx % count($dbhBadgeClasses)]; @endphp
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded {{ $cls['bg'] }} font-semibold"><span class="w-2.5 h-2.5 rounded-full {{ $cls['dot'] }}"></span> {{ $reg['nama'] }}: {{ number_format($reg['porsi'], 1, ',', '.') }}%</span>
+          @endforeach
+          @if($dbhOtherRegions->isNotEmpty())
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span> LAINNYA ({{ $dbhOtherRegions->count() }} Pemda): {{ number_format($dbhOtherPorsi, 1, ',', '.') }}%</span>
+          @endif
         </div>
       </div>
 
@@ -231,13 +251,10 @@
           <div class="flex items-center gap-1.5">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">FILTER DAERAH:</span>
             <select id="dbhDaerahSelect" onchange="filterDbhByDaerah(this.value)" class="bg-white border border-slate-200 text-xs font-bold text-blue-700 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 cursor-pointer shadow-2xs">
-              <option value="total">TOTAL DBH</option>
-              <option value="aceh">ACEH (PROVINSI)</option>
-              <option value="banda_aceh">KOTA BANDA ACEH</option>
-              <option value="aceh_besar">KAB. ACEH BESAR</option>
-              <option value="pidie">KAB. PIDIE</option>
-              <option value="pidie_jaya">KAB. PIDIE JAYA</option>
-              <option value="sabang">KOTA SABANG</option>
+              <option value="total">TOTAL DBH ({{ $dbhRegionCount }} PEMDA)</option>
+              @foreach($dbhRegions as $rKey => $reg)
+                <option value="{{ $rKey }}">{{ $reg['nama'] }} ({{ number_format($reg['porsi'], 1, ',', '.') }}%)</option>
+              @endforeach
             </select>
           </div>
 
@@ -267,9 +284,9 @@
       $dbhTotalPct = $dbhTotalPagu > 0 ? round(($dbhTotalReal / $dbhTotalPagu) * 100, 2) : 0;
     @endphp
     <!-- Active Daerah Banner -->
-    <div id="dbhDaerahBanner" class="px-4 py-2 bg-blue-50 border-b border-blue-100 flex items-center justify-between text-xs text-blue-800 font-semibold">
-      <span id="dbhDaerahBannerText">Menampilkan Data: <strong>TOTAL KESELURUHAN DBH ACEH</strong></span>
-      <span class="text-[11px] font-mono text-blue-600">Pagu: Rp {{ number_format($dbhTotalPagu / 1e9, 2, ',', '.') }} M · Realisasi: Rp {{ number_format($dbhTotalReal / 1e9, 2, ',', '.') }} M ({{ number_format($dbhTotalPct, 2, ',', '.') }}%)</span>
+    <div id="dbhDaerahBanner" class="px-4 py-2 bg-blue-50 border-b border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-blue-800 font-semibold">
+      <span id="dbhDaerahBannerText">Menampilkan Data: <strong>TOTAL KESELURUHAN DBH ACEH ({{ $dbhRegionCount }} PEMDA)</strong></span>
+      <span id="dbhBannerSummary" class="text-[11px] font-mono text-blue-600">Pagu: Rp {{ number_format($dbhTotalPagu / 1e9, 2, ',', '.') }} M · Realisasi: Rp {{ number_format($dbhTotalReal / 1e9, 2, ',', '.') }} M ({{ number_format($dbhTotalPct, 2, ',', '.') }}%)</span>
     </div>
 
     <!-- DBH Table (Kolom Persis Gambar 2 & 3: URAIAN DANA BAGI HASIL, PAGU, REALISASI, %) -->
@@ -348,21 +365,21 @@
         <tfoot class="bg-slate-100/80 border-t-2 border-slate-300 font-mono font-black text-xs text-slate-900">
           <tr>
             <td colspan="2" id="dbhFooterTitle" class="py-3.5 px-3 text-center uppercase tracking-wider font-extrabold text-slate-800">
-              TOTAL DANA BAGI HASIL
+              TOTAL DANA BAGI HASIL (KONSOLIDASI SE-ACEH)
             </td>
             <td id="dbhFooterPagu" class="py-3.5 px-3 text-right font-bold whitespace-nowrap">
-              Rp 409.250.181.000
+              Rp {{ number_format($dbhTotalPagu, 0, ',', '.') }}
             </td>
             <td id="dbhFooterReal" class="py-3.5 px-3 text-right font-extrabold text-emerald-700 whitespace-nowrap">
-              Rp 402.705.996.900
+              Rp {{ number_format($dbhTotalReal, 0, ',', '.') }}
             </td>
             <td id="dbhFooterPct" class="py-3.5 px-3">
               <div class="flex items-center justify-between text-emerald-700 font-extrabold mb-1">
-                <span id="dbhFooterPctText">98,40%</span>
-                <span id="dbhFooterBadge" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase font-sans">Optimal</span>
+                <span id="dbhFooterPctText">{{ number_format($dbhTotalPct, 2, '.', ',') }}%</span>
+                <span id="dbhFooterBadge" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase font-sans">{{ $dbhTotalPct >= 95 ? 'Optimal' : ($dbhTotalPct >= 80 ? 'On Track' : 'Perhatian') }}</span>
               </div>
               <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div id="dbhFooterBar" class="bg-emerald-600 h-2 rounded-full" style="width: 98.4%"></div>
+                <div id="dbhFooterBar" class="bg-emerald-600 h-2 rounded-full" style="width: {{ min($dbhTotalPct, 100) }}%"></div>
               </div>
             </td>
             <td></td>
@@ -751,10 +768,38 @@
     const ctx = document.getElementById('chartPorsiDbhDaerah');
     if (!ctx || typeof Chart === 'undefined') return;
 
-    const daerahKeys = ['aceh', 'banda_aceh', 'aceh_besar', 'pidie', 'pidie_jaya', 'sabang'];
-    const labels = ['ACEH', 'KOTA BANDA ACEH', 'KAB. ACEH BESAR', 'KAB. PIDIE', 'KAB. PIDIE JAYA', 'KOTA SABANG'];
-    const dataValues = daerahKeys.map(k => dbhDaerahData[k]?.porsi || 0);
-    const bgColors = ['#2563eb', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+    const sortedRegions = Object.entries(dbhDaerahData)
+      .filter(([k]) => k !== 'total')
+      .sort((a, b) => (b[1].realisasi || 0) - (a[1].realisasi || 0));
+
+    const palette = ['#2563eb', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+    const top6 = sortedRegions.slice(0, 6);
+    const rest = sortedRegions.slice(6);
+
+    const chartSlices = top6.map(([key, item], idx) => ({
+      key,
+      label: item.nama,
+      porsi: item.porsi || 0,
+      realisasi: item.realisasi || 0,
+      color: item.color || palette[idx] || '#64748b'
+    }));
+
+    if (rest.length > 0) {
+      const restReal = rest.reduce((s, [, x]) => s + (x.realisasi || 0), 0);
+      const totalReal = dbhDaerahData['total']?.realisasi || sortedRegions.reduce((s, [, x]) => s + (x.realisasi || 0), 0);
+      const restPorsi = totalReal > 0 ? Math.round((restReal / totalReal) * 1000) / 10 : 0;
+      chartSlices.push({
+        key: 'lainnya',
+        label: `LAINNYA (${rest.length} PEMDA)`,
+        porsi: restPorsi,
+        realisasi: restReal,
+        color: '#64748b'
+      });
+    }
+
+    const labels = chartSlices.map(s => s.label);
+    const dataValues = chartSlices.map(s => s.porsi);
+    const bgColors = chartSlices.map(s => s.color);
 
     chartDbhDaerah = new Chart(ctx, {
       type: 'doughnut',
@@ -782,9 +827,8 @@
             cornerRadius: 8,
             callbacks: {
               label: function(ctx) {
-                const key = daerahKeys[ctx.dataIndex];
-                const item = dbhDaerahData[key];
-                return ` ${ctx.label}: ${ctx.raw}% (${formatRp(item.realisasi)})`;
+                const slice = chartSlices[ctx.dataIndex];
+                return ` ${ctx.label}: ${ctx.raw}% (${formatRp(slice.realisasi)})`;
               }
             }
           }
@@ -792,9 +836,9 @@
         onClick: (evt, elements) => {
           if (elements.length > 0) {
             const idx = elements[0].index;
-            const key = daerahKeys[idx];
+            const key = chartSlices[idx]?.key;
             const selectEl = document.getElementById('dbhDaerahSelect');
-            if (selectEl) {
+            if (selectEl && key && key !== 'lainnya') {
               selectEl.value = key;
               filterDbhByDaerah(key);
             }
@@ -849,47 +893,96 @@
     });
   }
 
-  // 3. Filter DBH Berdasarkan Daerah
+  // 3. Filter DBH Berdasarkan Daerah (100% Real per Pemda & Akun jika tersedia)
   function filterDbhByDaerah(regionKey) {
     activeDbhDaerah = regionKey;
-    const banner = document.getElementById('dbhDaerahBanner');
     const bannerText = document.getElementById('dbhDaerahBannerText');
+    const bannerSummary = document.getElementById('dbhBannerSummary');
     const item = dbhDaerahData[regionKey] || dbhDaerahData['total'];
+    const hasExactItems = regionKey !== 'total' && item && item.items && Object.keys(item.items).length > 0;
 
     if (bannerText) {
-      bannerText.innerHTML = `Menampilkan Data: <strong>${item.nama.toUpperCase()}</strong> (Porsi: ${item.porsi}%)`;
+      bannerText.innerHTML = regionKey === 'total'
+        ? `Menampilkan Data: <strong>TOTAL KESELURUHAN DBH ACEH</strong> (100% Real SINTESA)`
+        : (hasExactItems
+            ? `Menampilkan Data: <strong>${item.nama.toUpperCase()}</strong> (Porsi ${item.porsi}% se-Aceh · 100% Real SINTESA per Jenis Akun)`
+            : `Menampilkan Data: <strong>${item.nama.toUpperCase()}</strong> — Porsi ${item.porsi}% se-Aceh`);
     }
 
-    // Jika daerah spesifik dipilih, lakukan simulasi proporsi nominal per daerah
-    const porsiFactor = item.porsi / 100.0;
+    const porsiFactor = (item?.porsi || 100) / 100.0;
     const rows = document.querySelectorAll('#dbhTableBody tr');
+    let sumExactPagu = 0;
+    let sumExactReal = 0;
 
     rows.forEach(r => {
       const idx = parseInt(r.getAttribute('data-index') || '0');
       const baseItem = dbhItemsData[idx];
       if (!baseItem) return;
 
-      const calcPagu = Math.round(baseItem.pagu * porsiFactor);
-      const calcReal = Math.round(baseItem.realisasi * porsiFactor);
-      const calcPct = calcPagu > 0 ? (calcReal / calcPagu) * 100 : 0;
+      let calcPagu = baseItem.pagu;
+      let calcReal = baseItem.realisasi;
+      let hideZero = false;
 
+      if (regionKey !== 'total') {
+        if (hasExactItems) {
+          const exact = item.items[baseItem.akun_kode];
+          calcPagu = exact ? exact.pagu : 0;
+          calcReal = exact ? exact.realisasi : 0;
+          hideZero = (calcPagu === 0 && calcReal === 0);
+          sumExactPagu += calcPagu;
+          sumExactReal += calcReal;
+        } else {
+          calcPagu = Math.round(baseItem.pagu * porsiFactor);
+          calcReal = Math.round(baseItem.realisasi * porsiFactor);
+        }
+      }
+
+      if (hideZero) {
+        r.setAttribute('data-region-hidden', '1');
+      } else {
+        r.removeAttribute('data-region-hidden');
+      }
+
+      const calcPct = calcPagu > 0 ? (calcReal / calcPagu) * 100 : 0;
+      const statusTxt = calcPct >= 95 ? 'Optimal' : (calcPct >= 80 ? 'On Track' : 'Perhatian');
+
+      r.setAttribute('data-pagu', calcPagu);
+      r.setAttribute('data-realisasi', calcReal);
+      r.setAttribute('data-pct', calcPct.toFixed(2));
       r.cells[2].textContent = formatRp(calcPagu);
       r.cells[3].textContent = formatRp(calcReal);
-      r.cells[4].querySelector('span').textContent = calcPct.toFixed(2) + '%';
-      r.cells[4].querySelector('.h-2 > div').style.width = Math.min(calcPct, 100) + '%';
+
+      const pctSpans = r.cells[4].querySelectorAll('span');
+      if (pctSpans[0]) pctSpans[0].textContent = calcPct.toFixed(2) + '%';
+      if (pctSpans[1]) {
+        pctSpans[1].textContent = statusTxt;
+        pctSpans[1].className = `text-[9px] px-1.5 py-0.2 rounded font-sans font-bold ${calcPct >= 100 ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`;
+      }
+      const bar = r.cells[4].querySelector('.h-2 > div');
+      if (bar) {
+        bar.style.width = Math.min(calcPct, 100) + '%';
+        bar.className = `${calcPct >= 100 ? 'bg-emerald-500' : (calcPct >= 95 ? 'bg-blue-600' : 'bg-amber-500')} h-2 rounded-full transition-all duration-300`;
+      }
     });
 
-    // Update Baris Footer Total Sinkron dengan Filter
+    filterDbhTable();
+
+    // Update Baris Footer & Banner Total Sinkron dengan Filter
     const baseTotalPagu = dbhItemsData.reduce((s, x) => s + (x.pagu || 0), 0);
     const baseTotalReal = dbhItemsData.reduce((s, x) => s + (x.realisasi || 0), 0);
-    const calcTotalPagu = Math.round(baseTotalPagu * porsiFactor);
-    const calcTotalReal = Math.round(baseTotalReal * porsiFactor);
+    const calcTotalPagu = regionKey === 'total' ? baseTotalPagu : (hasExactItems ? sumExactPagu : (item.pagu || Math.round(baseTotalPagu * porsiFactor)));
+    const calcTotalReal = regionKey === 'total' ? baseTotalReal : (hasExactItems ? sumExactReal : (item.realisasi || Math.round(baseTotalReal * porsiFactor)));
     const calcTotalPct = calcTotalPagu > 0 ? (calcTotalReal / calcTotalPagu) * 100 : 0;
+
+    if (bannerSummary) {
+      bannerSummary.textContent = `Pagu: Rp ${(calcTotalPagu / 1e9).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2})} M · Realisasi: Rp ${(calcTotalReal / 1e9).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2})} M (${calcTotalPct.toFixed(2).replace('.', ',')}%)`;
+    }
 
     const footerTitle = document.getElementById('dbhFooterTitle');
     const footerPagu = document.getElementById('dbhFooterPagu');
     const footerReal = document.getElementById('dbhFooterReal');
     const footerPctText = document.getElementById('dbhFooterPctText');
+    const footerBadge = document.getElementById('dbhFooterBadge');
     const footerBar = document.getElementById('dbhFooterBar');
 
     if (footerTitle) {
@@ -899,7 +992,8 @@
     }
     if (footerPagu) footerPagu.textContent = formatRp(calcTotalPagu);
     if (footerReal) footerReal.textContent = formatRp(calcTotalReal);
-    if (footerPctText) footerPctText.textContent = calcTotalPct.toFixed(2) + '%';
+    if (footerPctText) footerPctText.textContent = calcTotalPct.toFixed(2).replace('.', ',') + '%';
+    if (footerBadge) footerBadge.textContent = calcTotalPct >= 95 ? 'Optimal' : (calcTotalPct >= 80 ? 'On Track' : 'Perhatian');
     if (footerBar) footerBar.style.width = Math.min(calcTotalPct, 100) + '%';
   }
 
@@ -908,8 +1002,14 @@
     const q = (document.getElementById('dbhSearchInput')?.value || '').toLowerCase().trim();
     const rows = document.querySelectorAll('#dbhTableBody tr');
     let visible = 0;
+    let regionTotal = 0;
 
     rows.forEach(r => {
+      if (r.getAttribute('data-region-hidden') === '1') {
+        r.classList.add('hidden');
+        return;
+      }
+      regionTotal++;
       const searchStr = r.getAttribute('data-search') || '';
       if (!q || searchStr.includes(q)) {
         r.classList.remove('hidden');
@@ -921,7 +1021,7 @@
 
     const info = document.getElementById('dbhCountInfo');
     if (info) {
-      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari ${rows.length} jenis Dana Bagi Hasil`;
+      info.innerHTML = `Menampilkan <strong class="text-slate-800">${visible}</strong> dari ${regionTotal} jenis Dana Bagi Hasil`;
     }
   }
 
@@ -962,27 +1062,32 @@
     if (!item) return;
 
     const currentDaerah = dbhDaerahData[activeDbhDaerah] || dbhDaerahData['total'];
-    const porsiFactor = currentDaerah.porsi / 100.0;
-    const calcPagu = Math.round(item.pagu * porsiFactor);
-    const calcReal = Math.round(item.realisasi * porsiFactor);
+    const exact = activeDbhDaerah !== 'total' && currentDaerah?.items
+      ? (currentDaerah.items[item.akun_kode] || { pagu: 0, realisasi: 0 })
+      : null;
+    const porsiFactor = (currentDaerah?.porsi || 100) / 100.0;
+    const calcPagu = activeDbhDaerah === 'total' ? item.pagu : (exact ? exact.pagu : Math.round(item.pagu * porsiFactor));
+    const calcReal = activeDbhDaerah === 'total' ? item.realisasi : (exact ? exact.realisasi : Math.round(item.realisasi * porsiFactor));
     const calcSisa = Math.max(0, calcPagu - calcReal);
+    const calcPct = calcPagu > 0 ? Math.round((calcReal / calcPagu) * 10000) / 100 : 0;
+    const calcStatus = calcPct >= 95 ? 'Optimal' : (calcPct >= 80 ? 'On Track' : 'Perhatian');
 
     const regionInfo = activeDbhDaerah !== 'total' 
-      ? ` • Porsi ${currentDaerah.nama} (${currentDaerah.porsi}%): Alokasi ${formatRp(calcPagu)}, Salur ${formatRp(calcReal)}`
+      ? ` • Data Real ${currentDaerah.nama} (${currentDaerah.porsi}%): Alokasi ${formatRp(calcPagu)}, Salur ${formatRp(calcReal)}`
       : '';
 
     activeTkdModalData = {
       badge: 'DANA BAGI HASIL',
-      status: item.status,
+      status: calcStatus,
       title: item.uraian,
-      subtitle: `Kategori: ${item.kategori} · Penyaluran Daerah Provinsi Aceh`,
+      subtitle: `Kategori: ${item.kategori} · ${activeDbhDaerah === 'total' ? 'Konsolidasi Provinsi Aceh' : currentDaerah.nama}`,
       uraian: item.uraian,
-      kategori: `${item.kategori} (Bagian Anggaran BUN Transfer Umum / Satker 500133)`,
+      kategori: `${item.kategori} (BA BUN Transfer Umum · Akun ${item.akun_kode || '-'})`,
       keterangan: 'Penyaluran dana bagi hasil pusat-daerah untuk pendapatan asli daerah sesuai realisasi penerimaan perpajakan dan sumber daya alam.' + regionInfo,
       pagu: formatRp(calcPagu),
       real: formatRp(calcReal),
       sisa: formatRp(calcSisa),
-      pct: item.pct
+      pct: calcPct
     };
 
     renderTkdModal();

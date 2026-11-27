@@ -64,6 +64,94 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('kppn_kode');
 
+        $jbPaguRows = \Illuminate\Support\Facades\DB::table('sintesa_satker_pagu')
+            ->selectRaw("kppn_kode, SUBSTR(akun_kode, 1, 2) as prefix, SUM(pagu) as pagu")
+            ->groupBy('kppn_kode', \Illuminate\Support\Facades\DB::raw('SUBSTR(akun_kode, 1, 2)'))
+            ->get();
+        $jbRealRows = \Illuminate\Support\Facades\DB::table('sintesa_belanja_bulanan')
+            ->selectRaw("kppn_kode, SUBSTR(akun_kode, 1, 2) as prefix, SUM(total_realisasi) as realisasi")
+            ->groupBy('kppn_kode', \Illuminate\Support\Facades\DB::raw('SUBSTR(akun_kode, 1, 2)'))
+            ->get();
+
+        $jbRealMap = [];
+        foreach ($jbRealRows as $jr) {
+            $jbRealMap[$jr->kppn_kode][$jr->prefix] = (float) $jr->realisasi;
+        }
+
+        $jbLabels = [
+            '51' => 'Belanja Pegawai (51)',
+            '52' => 'Belanja Barang (52)',
+            '53' => 'Belanja Modal (53)',
+            '57' => 'Belanja Bantuan Sosial (57)',
+        ];
+        $jbPerKppn = [];
+        foreach ($jbPaguRows as $jp) {
+            $k = $jp->kppn_kode;
+            $pfx = str_starts_with((string) $jp->prefix, '6') ? '6x' : (string) $jp->prefix;
+            if (!isset($jbPerKppn[$k][$pfx])) {
+                $jbPerKppn[$k][$pfx] = [
+                    'kode' => $pfx,
+                    'label' => $jbLabels[$pfx] ?? ($pfx === '6x' ? 'Transfer Ke Daerah / TKD (6x)' : 'Belanja Lainnya (' . $pfx . ')'),
+                    'pagu' => 0.0,
+                    'realisasi' => 0.0,
+                ];
+            }
+            $jbPerKppn[$k][$pfx]['pagu'] += (float) $jp->pagu;
+        }
+        foreach ($jbRealMap as $k => $pfxMap) {
+            foreach ($pfxMap as $origPfx => $val) {
+                $pfx = str_starts_with((string) $origPfx, '6') ? '6x' : (string) $origPfx;
+                if (!isset($jbPerKppn[$k][$pfx])) {
+                    $jbPerKppn[$k][$pfx] = [
+                        'kode' => $pfx,
+                        'label' => $jbLabels[$pfx] ?? ($pfx === '6x' ? 'Transfer Ke Daerah / TKD (6x)' : 'Belanja Lainnya (' . $pfx . ')'),
+                        'pagu' => 0.0,
+                        'realisasi' => 0.0,
+                    ];
+                }
+                $jbPerKppn[$k][$pfx]['realisasi'] += $val;
+            }
+        }
+
+        $satkerPaguRows = \Illuminate\Support\Facades\DB::table('sintesa_satker_pagu')
+            ->selectRaw('kppn_kode, satker_kode, MAX(satker_uraian) as nama_satker, MAX(kementerian_kode) as kl_kode, MAX(kementerian_uraian) as kl_nama, SUM(pagu) as pagu')
+            ->groupBy('kppn_kode', 'satker_kode')
+            ->orderByDesc('pagu')
+            ->get();
+        $satkerRealRows = \Illuminate\Support\Facades\DB::table('sintesa_belanja_bulanan')
+            ->selectRaw('kppn_kode, satker_kode, SUM(total_realisasi) as realisasi')
+            ->groupBy('kppn_kode', 'satker_kode')
+            ->get();
+        $satkerRealMap = [];
+        foreach ($satkerRealRows as $sr) {
+            $satkerRealMap[$sr->kppn_kode . '|' . $sr->satker_kode] = (float) $sr->realisasi;
+        }
+        $topSatkersPerKppn = [];
+        foreach ($satkerPaguRows as $sp) {
+            $k = $sp->kppn_kode;
+            if (!isset($topSatkersPerKppn[$k])) {
+                $topSatkersPerKppn[$k] = [];
+            }
+            if (count($topSatkersPerKppn[$k]) >= 8) {
+                continue;
+            }
+            $sPagu = (float) $sp->pagu;
+            $sReal = $satkerRealMap[$k . '|' . $sp->satker_kode] ?? 0.0;
+            $sPct = $sPagu > 0 ? round(($sReal / $sPagu) * 100, 2) : 0.0;
+            $topSatkersPerKppn[$k][] = [
+                'kode' => $sp->satker_kode,
+                'nama' => $sp->nama_satker,
+                'kl' => $sp->kl_nama,
+                'jenis' => $sp->kl_kode === '999' ? 'BA BUN / TKD' : 'K/L',
+                'pagu' => $sPagu,
+                'pagu_formatted' => 'Rp ' . number_format($sPagu, 0, ',', '.'),
+                'realisasi' => $sReal,
+                'realisasi_formatted' => 'Rp ' . number_format($sReal, 0, ',', '.'),
+                'persen' => $sPct,
+                'persen_formatted' => number_format($sPct, 2, ',', '.') . '%',
+            ];
+        }
+
         $formatBucket = static function (float $pagu, float $real, float $blokir, int $satkers): array {
             $sisa = max(0, $pagu - $real);
             $pctReal = $pagu > 0 ? round(($real / $pagu) * 100, 2) : 0.0;
@@ -106,12 +194,29 @@ class DashboardController extends Controller
             $totPkl += $pKl; $totRkl += $rKl; $totBkl += $bKl; $totCkl += $cKl;
             $totPbun += $pBun; $totRbun += $rBun; $totBbun += $bBun; $totCbun += $cBun;
 
+            $jbList = array_values(array_map(function ($row) {
+                $pct = $row['pagu'] > 0 ? round(($row['realisasi'] / $row['pagu']) * 100, 2) : 0.0;
+                return [
+                    'kode' => $row['kode'],
+                    'label' => $row['label'],
+                    'pagu' => $row['pagu'],
+                    'pagu_formatted' => 'Rp ' . number_format($row['pagu'], 0, ',', '.'),
+                    'realisasi' => $row['realisasi'],
+                    'realisasi_formatted' => 'Rp ' . number_format($row['realisasi'], 0, ',', '.'),
+                    'persen' => $pct,
+                    'persen_formatted' => number_format($pct, 2, ',', '.') . '%',
+                ];
+            }, $jbPerKppn[$kode] ?? []));
+            usort($jbList, fn($a, $b) => strcmp($a['kode'], $b['kode']));
+
             $kppns['kppn_' . $kode] = [
                 'kode' => $kode,
                 'nama' => 'KPPN ' . $namaClean,
                 'all' => $formatBucket($pKl + $pBun, $rKl + $rBun, $bKl + $bBun, $cKl + $cBun),
                 'kl' => $formatBucket($pKl, $rKl, $bKl, $cKl),
                 'bun' => $formatBucket($pBun, $rBun, $bBun, $cBun),
+                'jenis_belanja' => $jbList,
+                'top_satkers' => $topSatkersPerKppn[$kode] ?? [],
             ];
         }
 

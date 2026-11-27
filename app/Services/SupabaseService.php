@@ -1937,6 +1937,10 @@ class SupabaseService
 
     public function getTKDDbhDaerah(): array
     {
+        $real = app(\App\Services\SintesaImportService::class)->getSummary('tkd_dbh_daerah');
+        if (!empty($real) && config('app.sintesa_real_data', true)) {
+            return $real;
+        }
         return [
             'total' => [
                 'kode' => 'TOTAL',

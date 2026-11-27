@@ -198,11 +198,11 @@
           </button>
         </div>
         <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
-          <button id="btnKppnPct" onclick="switchKppnView('percent')" class="px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all">
-            Persentase &amp; Nominal
-          </button>
-          <button id="btnKppnNominal" onclick="switchKppnView('nominal')" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all">
+          <button id="btnKppnNominal" onclick="switchKppnView('nominal')" class="px-2.5 py-1 rounded-md font-bold bg-white text-blue-700 shadow-2xs transition-all">
             Batang Nominal (T)
+          </button>
+          <button id="btnKppnPct" onclick="switchKppnView('percent')" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 hover:text-slate-800 transition-all">
+            Persentase &amp; Nominal
           </button>
         </div>
         <span id="labelKppnSub" class="text-[11px] text-slate-400 font-mono hidden md:inline">Realisasi / Pagu APBN (K/L + TKD)</span>
@@ -213,6 +213,10 @@
       
       <!-- Full Width Horizontal Ranking Chart -->
       <div class="w-full">
+        <div class="flex items-center justify-between text-[11px] text-slate-400 mb-2">
+          <span>💡 Klik salah satu batang KPPN (mis. <strong class="text-slate-600">KPPN Kutacane</strong>) untuk membuka rincian data per KPPN</span>
+          <span class="font-mono hidden sm:inline">Urutan: % Serapan Tertinggi</span>
+        </div>
         <div class="relative h-72 sm:h-80 w-full">
           <canvas id="chartRadarKppn"></canvas>
         </div>
@@ -459,6 +463,118 @@
     </div>
   </div>
 
+  <!-- Modal Detail KPPN (Saat Batang Radar KPPN Diklik) -->
+  <div id="modalDetailKppn" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4" onclick="if(event.target === this) closeKppnDetailModal()">
+    <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden">
+      <div class="bg-gradient-to-r from-[#0b132b] to-[#1e3a8a] text-white px-5 py-4 flex items-start justify-between gap-3 shrink-0">
+        <div>
+          <div class="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-blue-200">
+            <span id="mkppnKodeBadge" class="px-2 py-0.5 rounded bg-blue-500/30 border border-blue-400/40 font-bold text-white">KPPN 001</span>
+            <span>Rincian Kinerja Pelaksanaan APBN &amp; TKD</span>
+          </div>
+          <h3 id="mkppnTitle" class="text-base sm:text-xl font-black mt-1 tracking-tight">KPPN ...</h3>
+          <p id="mkppnSubtitle" class="text-[11px] text-blue-100/90 font-mono mt-0.5">-</p>
+        </div>
+        <button type="button" onclick="closeKppnDetailModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold transition-colors shrink-0" aria-label="Tutup">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-5 overflow-y-auto space-y-5">
+        <!-- 3 Kartu Ringkasan KPPN -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="p-3.5 rounded-xl bg-slate-900 text-white border border-slate-700">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-blue-300">
+              <span>Gabungan (K/L + TKD)</span>
+              <span id="mkppnAllSatker" class="font-mono text-slate-300">-</span>
+            </div>
+            <div id="mkppnAllReal" class="text-sm sm:text-base font-black font-mono mt-1">-</div>
+            <div id="mkppnAllPagu" class="text-[11px] font-mono text-slate-300 mt-0.5">Pagu: -</div>
+            <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-2 border-t border-slate-700">
+              <span class="text-slate-400">Serapan</span>
+              <span id="mkppnAllPct" class="font-black text-emerald-400">-</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-blue-700">
+              <span>Belanja Satker K/L</span>
+              <span id="mkppnKlSatker" class="font-mono text-blue-600">-</span>
+            </div>
+            <div id="mkppnKlReal" class="text-sm sm:text-base font-black font-mono text-slate-900 mt-1">-</div>
+            <div id="mkppnKlPagu" class="text-[11px] font-mono text-slate-500 mt-0.5">Pagu: -</div>
+            <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-2 border-t border-blue-200/70">
+              <span class="text-slate-500">Serapan</span>
+              <span id="mkppnKlPct" class="font-black text-blue-700">-</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              <span>TKD / BA BUN</span>
+              <span id="mkppnBunSatker" class="font-mono text-amber-700">-</span>
+            </div>
+            <div id="mkppnBunReal" class="text-sm sm:text-base font-black font-mono text-slate-900 mt-1">-</div>
+            <div id="mkppnBunPagu" class="text-[11px] font-mono text-slate-500 mt-0.5">Pagu: -</div>
+            <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-2 border-t border-amber-200/70">
+              <span class="text-slate-500">Serapan</span>
+              <span id="mkppnBunPct" class="font-black text-amber-700">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jenis Belanja per KPPN -->
+        <div>
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-700 mb-2">Rincian Pagu &amp; Realisasi per Jenis Belanja</h4>
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-50 text-[10px] uppercase font-extrabold text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th class="py-2 px-3">Jenis Belanja</th>
+                  <th class="py-2 px-3 text-right">Pagu</th>
+                  <th class="py-2 px-3 text-right">Realisasi</th>
+                  <th class="py-2 px-3 text-right w-20">%</th>
+                </tr>
+              </thead>
+              <tbody id="mkppnJbBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top 8 Satker di Wilayah KPPN -->
+        <div>
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-700 mb-2">Satker / Penyalur Pagu Terbesar di Wilayah Ini</h4>
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-50 text-[10px] uppercase font-extrabold text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th class="py-2 px-3">Satker</th>
+                  <th class="py-2 px-3">Tipe</th>
+                  <th class="py-2 px-3 text-right">Pagu</th>
+                  <th class="py-2 px-3 text-right">Realisasi</th>
+                  <th class="py-2 px-3 text-right w-20">%</th>
+                </tr>
+              </thead>
+              <tbody id="mkppnSatkerBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <span class="text-[11px] font-mono text-slate-400">Data SINTESA Kanwil DJPb Provinsi Aceh</span>
+        <div class="flex items-center gap-2">
+          <button type="button" id="mkppnApplyBtn" onclick="applySelectedKppnFilter()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-2xs">
+            Filter Dashboard ke KPPN Ini
+          </button>
+          <button type="button" onclick="closeKppnDetailModal()" class="px-3.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 @endsection
 
@@ -528,7 +644,7 @@
 
   // 1. CHART RADAR KINERJA 7 KPPN SE-PROVINSI ACEH (GABUNGAN K/L+TKD, K/L, BUN)
   let chartRadarKppnInstance = null;
-  let currentKppnMode = 'percent';
+  let currentKppnMode = 'nominal';
   let currentKppnScope = 'all';
   let activeRadarDetails = [];
 
@@ -539,9 +655,10 @@
   }
 
   function buildKppnSeries(scope) {
-    const list = Object.values(regionalMatrix.kppns || {}).map(k => {
+    const list = Object.entries(regionalMatrix.kppns || {}).map(([key, k]) => {
       const b = k[scope] || k.all;
       return {
+        key: key,
         nama: k.nama,
         pagu: b.pagu,
         pagu_formatted: b.pagu_formatted,
@@ -599,6 +716,21 @@
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (evt, _elements, chart) => {
+          const hits = chart.getElementsAtEventForMode(evt, 'y', { intersect: false }, true);
+          if (hits.length > 0) {
+            const d = activeRadarDetails[hits[0].index];
+            if (d && d.key) {
+              openKppnDetailModal(d.key);
+            }
+          }
+        },
+        onHover: (evt, _elements, chart) => {
+          const hits = chart.getElementsAtEventForMode(evt, 'y', { intersect: false }, true);
+          if (evt?.native?.target) {
+            evt.native.target.style.cursor = hits.length ? 'pointer' : 'default';
+          }
+        },
         layout: {
           padding: {
             right: window.innerWidth >= 640 ? 210 : 125
@@ -662,6 +794,10 @@
         }
       }
     });
+
+    if (currentKppnMode === 'nominal') {
+      switchKppnView('nominal');
+    }
   }
 
   function switchKppnScope(scope) {
@@ -746,6 +882,94 @@
 
     chartRadarKppnInstance.update();
   }
+
+  // 1B. MODAL DETAIL KPPN SAAT BAR DIKLIK
+  let activeModalKppnKey = null;
+
+  function escHtml(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function openKppnDetailModal(kppnKey) {
+    const k = (regionalMatrix.kppns || {})[kppnKey];
+    if (!k) return;
+    activeModalKppnKey = kppnKey;
+
+    document.getElementById('mkppnKodeBadge').textContent = `KPPN ${k.kode}`;
+    document.getElementById('mkppnTitle').textContent = k.nama;
+    document.getElementById('mkppnSubtitle').textContent =
+      `Total ${k.all.satker_count} Satker (${k.kl.satker_count} Satker K/L + ${k.bun.satker_count} BA BUN) · Blokir: ${k.all.blokir_formatted}`;
+
+    document.getElementById('mkppnAllSatker').textContent = `${k.all.satker_count} Satker`;
+    document.getElementById('mkppnAllReal').textContent = k.all.realisasi_formatted;
+    document.getElementById('mkppnAllPagu').textContent = `Pagu: ${k.all.pagu_formatted}`;
+    document.getElementById('mkppnAllPct').textContent = k.all.persen_realisasi_formatted;
+
+    document.getElementById('mkppnKlSatker').textContent = `${k.kl.satker_count} Satker`;
+    document.getElementById('mkppnKlReal').textContent = k.kl.realisasi_formatted;
+    document.getElementById('mkppnKlPagu').textContent = `Pagu: ${k.kl.pagu_formatted}`;
+    document.getElementById('mkppnKlPct').textContent = k.kl.persen_realisasi_formatted;
+
+    document.getElementById('mkppnBunSatker').textContent = `${k.bun.satker_count} Satker`;
+    document.getElementById('mkppnBunReal').textContent = k.bun.realisasi_formatted;
+    document.getElementById('mkppnBunPagu').textContent = `Pagu: ${k.bun.pagu_formatted}`;
+    document.getElementById('mkppnBunPct').textContent = k.bun.persen_realisasi_formatted;
+
+    const jbBody = document.getElementById('mkppnJbBody');
+    const jbRows = k.jenis_belanja || [];
+    jbBody.innerHTML = jbRows.length
+      ? jbRows.map(r => `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2 px-3 font-semibold text-slate-800">${escHtml(r.label)}</td>
+            <td class="py-2 px-3 text-right font-mono text-slate-700">${escHtml(r.pagu_formatted)}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-emerald-700">${escHtml(r.realisasi_formatted)}</td>
+            <td class="py-2 px-3 text-right font-mono font-extrabold text-blue-700">${escHtml(r.persen_formatted)}</td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="4" class="py-3 px-3 text-center text-slate-400">Tidak ada data jenis belanja</td></tr>';
+
+    const sBody = document.getElementById('mkppnSatkerBody');
+    const sRows = k.top_satkers || [];
+    sBody.innerHTML = sRows.length
+      ? sRows.map(s => `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2 px-3">
+              <div class="font-bold text-slate-900 leading-snug">${escHtml(s.nama)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escHtml(s.kode)} · ${escHtml(s.kl)}</div>
+            </td>
+            <td class="py-2 px-3">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${s.jenis === 'K/L' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-800'}">${escHtml(s.jenis)}</span>
+            </td>
+            <td class="py-2 px-3 text-right font-mono text-slate-700 whitespace-nowrap">${escHtml(s.pagu_formatted)}</td>
+            <td class="py-2 px-3 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">${escHtml(s.realisasi_formatted)}</td>
+            <td class="py-2 px-3 text-right font-mono font-extrabold text-slate-800">${escHtml(s.persen_formatted)}</td>
+          </tr>
+        `).join('')
+      : '<tr><td colspan="5" class="py-3 px-3 text-center text-slate-400">Tidak ada data satker</td></tr>';
+
+    document.getElementById('modalDetailKppn').classList.remove('hidden');
+  }
+
+  function closeKppnDetailModal() {
+    document.getElementById('modalDetailKppn').classList.add('hidden');
+  }
+
+  function applySelectedKppnFilter() {
+    if (!activeModalKppnKey) return;
+    const sel = document.getElementById('heroKppnSelect');
+    if (sel) sel.value = activeModalKppnKey;
+    setHeroRegion(activeModalKppnKey);
+    closeKppnDetailModal();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeKppnDetailModal();
+  });
 
   // 2. CHART 10 K/L TERBESAR DENGAN TOGGLE NOMINAL VS PERSEN
   let chartTopKLInstance = null;
